@@ -4,13 +4,17 @@ const supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const statusEl = document.getElementById("auth-status");
 const overlayEl = document.getElementById("overlay");
 const canvasEl = document.getElementById("canvas");
+const controlHintEl = document.getElementById("control-hint");
 const overlayTitleEl = document.getElementById("overlay-title");
 const overlayScoreEl = document.getElementById("overlay-score");
 const stepAuthEl = document.getElementById("step-auth");
 const stepSetupEl = document.getElementById("step-setup");
+const stepPillAuthEl = document.getElementById("step-pill-auth");
+const stepPillSetupEl = document.getElementById("step-pill-setup");
 const authMessageEl = document.getElementById("auth-message");
 const guestWarnEl = document.getElementById("guest-warn");
 const seasonSummaryEl = document.getElementById("season-summary");
+const modeSummaryEl = document.getElementById("mode-summary");
 
 const obEmailEl = document.getElementById("ob-email");
 const obPasswordEl = document.getElementById("ob-password");
@@ -54,6 +58,7 @@ const metricHashEl = document.getElementById("metric-hash");
 const metricEntropyEl = document.getElementById("metric-entropy");
 
 const soundToggleEl = document.getElementById("sound-toggle");
+const pauseToggleEl = document.getElementById("btn-pause-desktop");
 const toastLayerEl = document.getElementById("toast-layer");
 
 const modFastEl = document.getElementById("mod-fast");
@@ -162,6 +167,35 @@ function setStep(step) {
   const auth = step === "auth";
   stepAuthEl.classList.toggle("hidden", !auth);
   stepSetupEl.classList.toggle("hidden", auth);
+  stepPillAuthEl.classList.toggle("active", auth);
+  stepPillSetupEl.classList.toggle("active", !auth);
+}
+
+function describeMode(mode) {
+  if (mode === "ai") return "Соло-режим: один игрок против нейросети.";
+  if (mode === "ranked") return "Рейтинг: сложность Hard, результат попадет в таблицу лидеров.";
+  if (mode === "pvp") return "Локальный матч: A/D для левого, стрелки для правого игрока.";
+  return "Выберите режим, чтобы продолжить.";
+}
+
+function updateModeSummary(mode = selectedMode) {
+  if (!modeSummaryEl) return;
+  modeSummaryEl.textContent = describeMode(mode);
+}
+
+function updatePauseButton() {
+  if (!pauseToggleEl) return;
+  pauseToggleEl.textContent = paused ? "Продолжить" : "Пауза";
+  pauseToggleEl.classList.toggle("active", paused);
+}
+
+function updateControlHint() {
+  if (!controlHintEl) return;
+  if (currentMode === 0) {
+    controlHintEl.textContent = "A/D — левая ракетка, стрелки — правая. Пробел или кнопка «Пауза».";
+    return;
+  }
+  controlHintEl.textContent = "A/D — управление игрока. Пробел или кнопка «Пауза».";
 }
 
 function applyPerformanceProfile() {
@@ -323,6 +357,7 @@ function showOverlayForOnboarding() {
   toggleOverlayParticles(true);
   setSpeedEnergy(0);
   paused = true;
+  updatePauseButton();
   ccall("set_paused", null, ["number"], [1]);
   clearTouchInput();
   setInputLock(true);
@@ -339,6 +374,8 @@ function showOverlayForOnboarding() {
   } else {
     setStep("auth");
   }
+  updateModeSummary();
+  btnStartGame.disabled = !selectedMode;
   updateRankedAvailability();
 }
 
@@ -358,6 +395,8 @@ function selectMode(mode) {
   btnModeAi.classList.toggle("theme-active", mode === "ai");
   btnModeRanked.classList.toggle("theme-active", mode === "ranked");
   btnModePvp.classList.toggle("theme-active", mode === "pvp");
+  updateModeSummary(mode);
+  btnStartGame.disabled = false;
 }
 
 function weekStartISO(date) {
@@ -643,20 +682,21 @@ function updateRallyHud(rally) {
 function updateModeHud(mode) {
   if (mode === 1) {
     if (isRanked) {
-      hudModeEl.textContent = "Neural Net (Ranked Hard)";
+      hudModeEl.textContent = "Нейросеть (Рейтинг, Hard)";
       writeTerminal("MODE: RANKED");
       flashBadge(badgeLedgerEl, "LEDGER LOCKED");
     } else {
-      const labels = ["Easy", "Normal", "Hard"];
-      hudModeEl.textContent = `Neural Net (${labels[currentAiLevel]})`;
+      const labels = ["Легко", "Нормально", "Сложно"];
+      hudModeEl.textContent = `Нейросеть (${labels[currentAiLevel]})`;
       writeTerminal("MODE: NEURAL");
       flashBadge(badgeLedgerEl, "LEDGER READY");
     }
   } else {
-    hudModeEl.textContent = "Two Players";
+    hudModeEl.textContent = "2 игрока";
     writeTerminal("MODE: PVP");
     flashBadge(badgeLedgerEl, "LEDGER READY");
   }
+  updateControlHint();
 }
 
 function updateScoreHud(left, right) {
@@ -758,6 +798,15 @@ function flushInput() {
   ]);
 }
 
+function togglePauseFromUi() {
+  if (!overlayEl.classList.contains("hidden")) return;
+  paused = !paused;
+  ccall("set_paused", null, ["number"], [paused ? 1 : 0]);
+  if (paused) setSpeedEnergy(0);
+  setAmbientTarget(paused ? 0.003 : ambientBase() + (isRanked ? 0.004 : 0));
+  updatePauseButton();
+}
+
 function bindAuthInputSafeTyping() {
   const authInputs = [obEmailEl, obPasswordEl, obNicknameEl];
   for (const input of authInputs) {
@@ -808,6 +857,7 @@ function startSelectedGame() {
   ensureMainStarted();
   setSpeedEnergy(0);
   paused = false;
+  updatePauseButton();
 
   currentMode = selectedMode === "pvp" ? 0 : 1;
   isRanked = selectedMode === "ranked";
@@ -838,6 +888,7 @@ function wireModuleCallbacks() {
     toggleOverlayParticles(true);
     setSpeedEnergy(0);
     paused = true;
+    updatePauseButton();
     ccall("set_paused", null, ["number"], [1]);
     clearTouchInput();
     setInputLock(true);
@@ -916,13 +967,21 @@ function initEvents() {
 
   soundToggleEl.addEventListener("click", () => {
     audioEnabled = !audioEnabled;
-    soundToggleEl.textContent = `Sound: ${audioEnabled ? "On" : "Off"}`;
+    soundToggleEl.textContent = `Звук: ${audioEnabled ? "Вкл" : "Выкл"}`;
     soundToggleEl.classList.toggle("off", !audioEnabled);
     if (!audioEnabled && ambientGain) {
       ambientGain.gain.value = 0;
       ambientTarget = 0;
     }
   });
+
+  if (pauseToggleEl) {
+    pauseToggleEl.addEventListener("click", () => {
+      ensureAudio();
+      ensureAmbient();
+      togglePauseFromUi();
+    });
+  }
 
   tabWeek.addEventListener("click", () => {
     leaderboardMode = "week";
@@ -947,13 +1006,7 @@ function initEvents() {
 
     if (event.code === "Space") {
       event.preventDefault();
-      if (!overlayEl.classList.contains("hidden")) {
-        return;
-      }
-      paused = !paused;
-      ccall("set_paused", null, ["number"], [paused ? 1 : 0]);
-      if (paused) setSpeedEnergy(0);
-      setAmbientTarget(paused ? 0.003 : ambientBase() + (isRanked ? 0.004 : 0));
+      togglePauseFromUi();
     }
   });
 
@@ -984,12 +1037,7 @@ function initEvents() {
   bindTouchButton(touchPause, () => {
     ensureAudio();
     ensureAmbient();
-    if (overlayEl.classList.contains("hidden")) {
-      paused = !paused;
-      ccall("set_paused", null, ["number"], [paused ? 1 : 0]);
-      if (paused) setSpeedEnergy(0);
-      setAmbientTarget(paused ? 0.003 : ambientBase() + (isRanked ? 0.004 : 0));
-    }
+    togglePauseFromUi();
   }, () => {});
 
   supa.auth.onAuthStateChange(async () => {
@@ -1007,7 +1055,7 @@ async function init() {
   await loadLeaderboard();
   updateLeaderboardTabIndicator();
 
-  hudModeEl.textContent = "Two Players";
+  hudModeEl.textContent = "2 игрока";
   hudScoreEl.textContent = "0 - 0";
   hudTargetEl.textContent = "До 7";
   hudSpeedEl.textContent = "0";
@@ -1016,6 +1064,11 @@ async function init() {
   badgeSyncEl.textContent = "SYNC OK";
   badgeLedgerEl.textContent = "LEDGER READY";
   badgeTxEl.textContent = "TX IDLE";
+  soundToggleEl.textContent = `Звук: ${audioEnabled ? "Вкл" : "Выкл"}`;
+  btnStartGame.disabled = !selectedMode;
+  updateModeSummary();
+  updatePauseButton();
+  updateControlHint();
 
   await playBootSequence();
   showOverlayForOnboarding();
