@@ -261,6 +261,9 @@ body::after {
   right: calc(8px + env(safe-area-inset-right));
   z-index: 30;
   transition: opacity 0.2s ease, transform 0.2s ease;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
 }
 
 .topbar::after {
@@ -293,9 +296,9 @@ body::after {
 }
 
 body.overlay-open .topbar {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-8px);
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 .main {
