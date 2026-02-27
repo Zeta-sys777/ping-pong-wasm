@@ -46,6 +46,8 @@ const hudSpeedEl = document.getElementById("hud-speed");
 const hudSpeedBarEl = document.getElementById("hud-speed-bar");
 const hudRallyEl = document.getElementById("hud-rally");
 const hudRankEl = document.getElementById("hud-rank");
+const mobileModeEl = document.getElementById("mobile-mode");
+const mobileScoreEl = document.getElementById("mobile-score");
 const terminalLogEl = document.getElementById("terminal-log");
 const speedGlowEl = document.getElementById("speed-glow");
 
@@ -680,27 +682,32 @@ function updateRallyHud(rally) {
 }
 
 function updateModeHud(mode) {
+  let modeText = "2 игрока";
   if (mode === 1) {
     if (isRanked) {
-      hudModeEl.textContent = "Нейросеть (Рейтинг, Hard)";
+      modeText = "Нейросеть (Рейтинг, Hard)";
       writeTerminal("MODE: RANKED");
       flashBadge(badgeLedgerEl, "LEDGER LOCKED");
     } else {
       const labels = ["Легко", "Нормально", "Сложно"];
-      hudModeEl.textContent = `Нейросеть (${labels[currentAiLevel]})`;
+      modeText = `Нейросеть (${labels[currentAiLevel]})`;
       writeTerminal("MODE: NEURAL");
       flashBadge(badgeLedgerEl, "LEDGER READY");
     }
   } else {
-    hudModeEl.textContent = "2 игрока";
+    modeText = "2 игрока";
     writeTerminal("MODE: PVP");
     flashBadge(badgeLedgerEl, "LEDGER READY");
   }
+  hudModeEl.textContent = modeText;
+  if (mobileModeEl) mobileModeEl.textContent = modeText;
   updateControlHint();
 }
 
 function updateScoreHud(left, right) {
-  hudScoreEl.textContent = `${left} - ${right}`;
+  const scoreText = `${left} - ${right}`;
+  hudScoreEl.textContent = scoreText;
+  if (mobileScoreEl) mobileScoreEl.textContent = scoreText;
   if (left > lastLeftPoints || right > lastRightPoints) {
     document.body.classList.add("glitch");
     spawnToast("TX CONFIRMED", currentMode === 1);
@@ -1069,6 +1076,8 @@ async function init() {
   updateModeSummary();
   updatePauseButton();
   updateControlHint();
+  if (mobileModeEl) mobileModeEl.textContent = "2 игрока";
+  if (mobileScoreEl) mobileScoreEl.textContent = "0 - 0";
 
   await playBootSequence();
   showOverlayForOnboarding();
