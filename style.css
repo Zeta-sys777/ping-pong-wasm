@@ -881,6 +881,9 @@ body.ai-mode #canvas-holder::before {
   align-items: center;
   justify-content: center;
   padding: 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   z-index: 10;
   opacity: 1;
   transition: opacity 0.35s ease;
@@ -1381,6 +1384,10 @@ ol li {
   .page {
     padding-bottom: 132px;
   }
+  .overlay {
+    align-items: flex-start;
+    padding: calc(10px + env(safe-area-inset-top)) 8px calc(10px + env(safe-area-inset-bottom));
+  }
 }
 
 body.mobile-lite::before,
@@ -1490,6 +1497,10 @@ body.overlay-open .mobile-matchbar {
 
 .onboarding-card {
   width: min(560px, 100%);
+  max-height: calc(100dvh - 20px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
   z-index: 3;
 }
 
