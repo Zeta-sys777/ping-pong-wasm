@@ -1483,6 +1483,11 @@ body.mobile-lite .boot-sequence .boot-scan {
   display: none;
 }
 
+body.overlay-open .touch-controls,
+body.overlay-open .mobile-matchbar {
+  display: none !important;
+}
+
 .onboarding-card {
   width: min(560px, 100%);
   z-index: 3;

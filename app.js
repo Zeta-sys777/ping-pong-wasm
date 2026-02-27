@@ -355,6 +355,7 @@ function clearTouchInput() {
 
 function showOverlayForOnboarding() {
   overlayEl.classList.remove("hidden");
+  document.body.classList.add("overlay-open");
   overlayEl.classList.remove("victory");
   toggleOverlayParticles(true);
   setSpeedEnergy(0);
@@ -383,6 +384,7 @@ function showOverlayForOnboarding() {
 
 function hideOverlay() {
   overlayEl.classList.add("hidden");
+  document.body.classList.remove("overlay-open");
   toggleOverlayParticles(false);
   setInputLock(false);
 }
@@ -892,6 +894,7 @@ function startSelectedGame() {
 function wireModuleCallbacks() {
   const onGameOver = (score) => {
     overlayEl.classList.remove("hidden");
+    document.body.classList.add("overlay-open");
     toggleOverlayParticles(true);
     setSpeedEnergy(0);
     paused = true;
