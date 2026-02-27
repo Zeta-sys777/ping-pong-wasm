@@ -1206,6 +1206,105 @@ ol li {
   }
 }
 
+body.mobile-lite::before,
+body.mobile-lite::after,
+body.mobile-lite .code-rain,
+body.mobile-lite .grain,
+body.mobile-lite .velocity-aura,
+body.mobile-lite .cyber-grid,
+body.mobile-lite .frame-corners,
+body.mobile-lite .overlay-demo {
+  display: none !important;
+}
+
+body.mobile-lite .topbar {
+  padding: 10px 12px;
+}
+
+body.mobile-lite .brand {
+  font-size: 16px;
+}
+
+body.mobile-lite .status {
+  font-size: 12px;
+}
+
+body.mobile-lite .main {
+  padding: 10px;
+  gap: 10px;
+}
+
+body.mobile-lite .sidebar,
+body.mobile-lite .hud-badges,
+body.mobile-lite .hud-metrics,
+body.mobile-lite .terminal-log,
+body.mobile-lite .sound-toggle,
+body.mobile-lite .ai-badge,
+body.mobile-lite .hint {
+  display: none !important;
+}
+
+body.mobile-lite #canvas-holder {
+  min-height: auto;
+  padding: 8px;
+  border-radius: 10px;
+}
+
+body.mobile-lite #canvas-holder::after {
+  display: none;
+}
+
+body.mobile-lite .hud {
+  top: 8px;
+  left: 8px;
+  min-width: 0;
+  padding: 8px 10px;
+  gap: 4px;
+}
+
+body.mobile-lite .hud .hud-item:not(:nth-child(2)) {
+  display: none;
+}
+
+body.mobile-lite .hud .hud-item:nth-child(2) .hud-label,
+body.mobile-lite .hud .hud-item:nth-child(2) .hud-sub {
+  display: none;
+}
+
+body.mobile-lite .hud .hud-item:nth-child(2) .hud-value {
+  font-size: 18px;
+  letter-spacing: 0.04em;
+}
+
+body.mobile-lite .page {
+  padding-bottom: 104px;
+}
+
+body.mobile-lite .touch-controls {
+  display: flex;
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  z-index: 18;
+  margin-top: 0;
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(7, 12, 16, 0.76);
+  border: 1px solid rgba(61, 255, 182, 0.14);
+  backdrop-filter: blur(6px);
+}
+
+body.mobile-lite .touch-btn {
+  min-width: 64px;
+  padding: 9px 10px;
+  font-size: 12px;
+}
+
+body.mobile-lite .boot-sequence .boot-scan {
+  display: none;
+}
+
 .onboarding-card {
   width: min(560px, 100%);
   z-index: 3;

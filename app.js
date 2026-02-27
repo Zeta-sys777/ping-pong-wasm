@@ -103,6 +103,7 @@ let overlayParticlesTimer = null;
 let speedEnergyTarget = 0;
 let speedEnergyCurrent = 0;
 let introPlayed = false;
+let lowFxMode = false;
 
 const audioProfiles = {
   soft: { blipFreq: 560, blipGain: 0.025, blipType: "sine", thumpFreq: 140, thumpGain: 0.035, thumpType: "sine", ambientFreq: 40, ambientGain: 0.008 },
@@ -163,6 +164,14 @@ function setStep(step) {
   stepSetupEl.classList.toggle("hidden", auth);
 }
 
+function applyPerformanceProfile() {
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const mobileViewport = window.matchMedia("(max-width: 900px)").matches;
+  const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+  lowFxMode = reduceMotion || mobileViewport || coarsePointer;
+  document.body.classList.toggle("mobile-lite", lowFxMode);
+}
+
 function updateLeaderboardTabIndicator() {
   if (!leaderboardTabsEl) return;
   const active = leaderboardTabsEl.querySelector(".tab.active");
@@ -176,6 +185,7 @@ function updateLeaderboardTabIndicator() {
 }
 
 function initParallax() {
+  if (lowFxMode) return;
   let raf = 0;
   window.addEventListener("pointermove", (event) => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -194,6 +204,7 @@ function initParallax() {
 }
 
 function spawnOverlayParticle() {
+  if (lowFxMode) return;
   if (!particleFieldEl || overlayEl.classList.contains("hidden")) return;
   const particle = document.createElement("span");
   particle.className = Math.random() > 0.45 ? "particle blue" : "particle";
@@ -217,6 +228,14 @@ function spawnOverlayParticle() {
 
 function toggleOverlayParticles(active) {
   if (!particleFieldEl) return;
+  if (lowFxMode) {
+    particleFieldEl.innerHTML = "";
+    if (overlayParticlesTimer) {
+      clearInterval(overlayParticlesTimer);
+      overlayParticlesTimer = null;
+    }
+    return;
+  }
   if (active) {
     if (overlayParticlesTimer) return;
     for (let i = 0; i < 10; i += 1) spawnOverlayParticle();
@@ -234,7 +253,7 @@ function toggleOverlayParticles(active) {
 
 function setSpeedEnergy(speed) {
   const next = Math.min(Math.max(speed / 700, 0), 1);
-  speedEnergyTarget = next;
+  speedEnergyTarget = lowFxMode ? next * 0.35 : next;
 }
 
 function tickVisualEnergy() {
@@ -244,6 +263,7 @@ function tickVisualEnergy() {
 }
 
 function playBootSequence() {
+  if (lowFxMode) return Promise.resolve();
   if (!bootSequenceEl || introPlayed) return Promise.resolve();
   introPlayed = true;
   bootSequenceEl.classList.remove("hidden");
@@ -869,9 +889,14 @@ function wireModuleCallbacks() {
 }
 
 function initEvents() {
+  applyPerformanceProfile();
   bindAuthInputSafeTyping();
   initParallax();
-  window.addEventListener("resize", updateLeaderboardTabIndicator);
+  window.addEventListener("resize", () => {
+    applyPerformanceProfile();
+    updateLeaderboardTabIndicator();
+  });
+  window.addEventListener("orientationchange", applyPerformanceProfile);
 
   btnSignIn.addEventListener("click", signIn);
   btnSignUp.addEventListener("click", signUp);
