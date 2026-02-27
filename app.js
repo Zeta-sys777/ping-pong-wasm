@@ -27,6 +27,7 @@ const btnStartGame = document.getElementById("btn-start-game");
 const btnModeAi = document.getElementById("btn-mode-ai");
 const btnModeRanked = document.getElementById("btn-mode-ranked");
 const btnModePvp = document.getElementById("btn-mode-pvp");
+const modeCardEls = Array.from(document.querySelectorAll(".mode-card"));
 
 const tabWeek = document.getElementById("tab-week");
 const tabAll = document.getElementById("tab-all");
@@ -111,6 +112,7 @@ let speedEnergyTarget = 0;
 let speedEnergyCurrent = 0;
 let introPlayed = false;
 let lowFxMode = false;
+let goalShockTimer = null;
 
 const audioProfiles = {
   soft: { blipFreq: 560, blipGain: 0.025, blipType: "sine", thumpFreq: 140, thumpGain: 0.035, thumpType: "sine", ambientFreq: 40, ambientGain: 0.008 },
@@ -206,6 +208,74 @@ function applyPerformanceProfile() {
   const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
   lowFxMode = reduceMotion || mobileViewport || coarsePointer;
   document.body.classList.toggle("mobile-lite", lowFxMode);
+  if (lowFxMode) {
+    for (const card of modeCardEls) {
+      card.style.setProperty("--tilt-x", "0deg");
+      card.style.setProperty("--tilt-y", "0deg");
+      card.classList.remove("is-tilting");
+    }
+  }
+}
+
+function triggerGoalShock() {
+  if (goalShockTimer) {
+    clearTimeout(goalShockTimer);
+    goalShockTimer = null;
+  }
+  document.body.classList.remove("goal-shock");
+  // Force restart of CSS animation for rapid consecutive goals.
+  void document.body.offsetWidth;
+  document.body.classList.add("goal-shock");
+  goalShockTimer = setTimeout(() => {
+    document.body.classList.remove("goal-shock");
+    goalShockTimer = null;
+  }, lowFxMode ? 220 : 420);
+}
+
+function bindButtonRipples() {
+  const buttons = document.querySelectorAll("button");
+  for (const button of buttons) {
+    button.addEventListener("pointerdown", (event) => {
+      if (button.disabled) return;
+      if (lowFxMode && window.matchMedia("(pointer: coarse)").matches) return;
+      const rect = button.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height) * 1.35;
+      const ripple = document.createElement("span");
+      ripple.className = "btn-ripple";
+      ripple.style.width = `${size}px`;
+      ripple.style.height = `${size}px`;
+      ripple.style.left = `${event.clientX - rect.left - size / 2}px`;
+      ripple.style.top = `${event.clientY - rect.top - size / 2}px`;
+      button.appendChild(ripple);
+      ripple.addEventListener("animationend", () => ripple.remove(), { once: true });
+    });
+  }
+}
+
+function bindModeCardTilt() {
+  for (const card of modeCardEls) {
+    const reset = () => {
+      card.style.setProperty("--tilt-x", "0deg");
+      card.style.setProperty("--tilt-y", "0deg");
+      card.classList.remove("is-tilting");
+    };
+    card.addEventListener("pointermove", (event) => {
+      if (lowFxMode || window.matchMedia("(hover: none)").matches) {
+        reset();
+        return;
+      }
+      const rect = card.getBoundingClientRect();
+      const x = (event.clientX - rect.left) / rect.width;
+      const y = (event.clientY - rect.top) / rect.height;
+      const tiltX = (0.5 - y) * 9;
+      const tiltY = (x - 0.5) * 12;
+      card.style.setProperty("--tilt-x", `${tiltX.toFixed(2)}deg`);
+      card.style.setProperty("--tilt-y", `${tiltY.toFixed(2)}deg`);
+      card.classList.add("is-tilting");
+    });
+    card.addEventListener("pointerleave", reset);
+    card.addEventListener("blur", reset);
+  }
 }
 
 function updateLeaderboardTabIndicator() {
@@ -711,13 +781,18 @@ function updateScoreHud(left, right) {
   hudScoreEl.textContent = scoreText;
   if (mobileScoreEl) mobileScoreEl.textContent = scoreText;
   if (left > lastLeftPoints || right > lastRightPoints) {
-    document.body.classList.add("glitch");
+    if (!lowFxMode) {
+      document.body.classList.add("glitch");
+    }
+    triggerGoalShock();
     spawnToast("TX CONFIRMED", currentMode === 1);
     spawnToast("REPLAY", true);
     writeTerminal("GOAL: CONFIRMED");
     flashBadge(badgeTxEl, "TX CONFIRMED");
     goalThump();
-    setTimeout(() => document.body.classList.remove("glitch"), 180);
+    if (!lowFxMode) {
+      setTimeout(() => document.body.classList.remove("glitch"), 140);
+    }
   }
   lastLeftPoints = left;
   lastRightPoints = right;
@@ -951,6 +1026,8 @@ function wireModuleCallbacks() {
 
 function initEvents() {
   applyPerformanceProfile();
+  bindButtonRipples();
+  bindModeCardTilt();
   bindAuthInputSafeTyping();
   initParallax();
   window.addEventListener("resize", () => {
