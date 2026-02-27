@@ -1,5 +1,12 @@
 const { createClient } = window.supabase;
-const supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supa = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: "pong-wasm-auth",
+  },
+});
 
 const statusEl = document.getElementById("auth-status");
 const overlayEl = document.getElementById("overlay");
@@ -24,6 +31,10 @@ const btnSignUp = document.getElementById("btn-signup");
 const btnGuest = document.getElementById("btn-auth-guest");
 const btnBackAuth = document.getElementById("btn-back-auth");
 const btnStartGame = document.getElementById("btn-start-game");
+const btnOpenAuth = document.getElementById("btn-open-auth");
+const btnLogout = document.getElementById("btn-logout");
+const sessionLineEl = document.getElementById("session-line");
+const guestSessionBannerEl = document.getElementById("guest-session-banner");
 const btnModeAi = document.getElementById("btn-mode-ai");
 const btnModeRanked = document.getElementById("btn-mode-ranked");
 const btnModePvp = document.getElementById("btn-mode-pvp");
@@ -42,6 +53,7 @@ const bootSequenceEl = document.getElementById("boot-sequence");
 const bootLineEl = document.getElementById("boot-line");
 const bootProgressFillEl = document.getElementById("boot-progress-fill");
 const bootSkipEl = document.getElementById("boot-skip");
+const launchTransitionEl = document.getElementById("launch-transition");
 
 const hudModeEl = document.getElementById("hud-mode");
 const hudScoreEl = document.getElementById("hud-score");
@@ -123,6 +135,7 @@ let speedEnergyCurrent = 0;
 let introPlayed = false;
 let lowFxMode = false;
 let goalShockTimer = null;
+const guestSessionKey = "pong_guest_mode";
 
 const audioProfiles = {
   soft: { blipFreq: 560, blipGain: 0.025, blipType: "sine", thumpFreq: 140, thumpGain: 0.035, thumpType: "sine", ambientFreq: 40, ambientGain: 0.008 },
@@ -256,6 +269,58 @@ function setStep(step) {
   stepSetupEl.classList.toggle("hidden", auth);
   stepPillAuthEl.classList.toggle("active", auth);
   stepPillSetupEl.classList.toggle("active", !auth);
+  if (!auth) updateSessionPanel();
+}
+
+function isGuestSession() {
+  return authChoice === "guest" || window.localStorage.getItem(guestSessionKey) === "1";
+}
+
+function updateSessionPanel() {
+  if (!sessionLineEl || !guestSessionBannerEl || !btnOpenAuth || !btnLogout) return;
+  if (currentUser) {
+    sessionLineEl.textContent = `Аккаунт: ${currentUser.email}`;
+    guestSessionBannerEl.classList.add("hidden");
+    btnLogout.classList.remove("hidden");
+    btnOpenAuth.textContent = "Сменить аккаунт";
+    return;
+  }
+  if (isGuestSession()) {
+    sessionLineEl.textContent = "Сессия: гость";
+    guestSessionBannerEl.classList.remove("hidden");
+    btnLogout.classList.add("hidden");
+    btnOpenAuth.textContent = "Войти в аккаунт";
+    return;
+  }
+  sessionLineEl.textContent = "Сессия: без входа";
+  guestSessionBannerEl.classList.add("hidden");
+  btnLogout.classList.add("hidden");
+  btnOpenAuth.textContent = "Войти в аккаунт";
+}
+
+function enterGuestSession(showToast = true) {
+  authChoice = "guest";
+  window.localStorage.setItem(guestSessionKey, "1");
+  guestWarnEl.classList.add("active");
+  if (showToast) {
+    setAuthMessage("Режим гостя активирован.");
+    spawnToast("ВЫ ВОШЛИ КАК ГОСТЬ", true);
+  }
+  setStep("setup");
+  updateSessionPanel();
+}
+
+function playLaunchTransition() {
+  if (!launchTransitionEl || lowFxMode) return Promise.resolve();
+  launchTransitionEl.classList.remove("hidden");
+  launchTransitionEl.classList.add("active");
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      launchTransitionEl.classList.remove("active");
+      launchTransitionEl.classList.add("hidden");
+      resolve();
+    }, 760);
+  });
 }
 
 function describeMode(mode) {
@@ -642,6 +707,8 @@ function showOverlayForOnboarding() {
   if (currentUser) {
     authChoice = "signed";
     setStep("setup");
+  } else if (isGuestSession()) {
+    enterGuestSession(false);
   } else {
     setStep("auth");
   }
@@ -656,6 +723,10 @@ function hideOverlay() {
   document.body.classList.remove("overlay-open");
   toggleOverlayParticles(false);
   setInputLock(false);
+  if (launchTransitionEl) {
+    launchTransitionEl.classList.remove("active");
+    launchTransitionEl.classList.add("hidden");
+  }
 }
 
 function updateRankedAvailability() {
@@ -664,7 +735,7 @@ function updateRankedAvailability() {
   if (!currentUser && selectedMode === "ranked") {
     selectedMode = null;
     for (const card of modeCardEls) {
-      card.classList.remove("theme-active");
+      card.classList.remove("mode-active");
     }
     document.body.classList.remove("mode-ai", "mode-ranked", "mode-pvp", "mode-blitz", "mode-training", "mode-arcade");
     btnStartGame.disabled = true;
@@ -683,7 +754,7 @@ function selectMode(mode, options = {}) {
   selectedMode = mode;
   for (const [id, button] of Object.entries(modeButtons)) {
     if (!button) continue;
-    button.classList.toggle("theme-active", id === mode);
+    button.classList.toggle("mode-active", id === mode);
   }
   document.body.classList.remove("mode-ai", "mode-ranked", "mode-pvp", "mode-blitz", "mode-training", "mode-arcade");
   document.body.classList.add(`mode-${mode}`);
@@ -710,15 +781,18 @@ function formatWeekLabel(weekStart) {
 }
 
 async function refreshUser() {
-  const { data } = await supa.auth.getUser();
-  currentUser = data.user || null;
+  const { data } = await supa.auth.getSession();
+  currentUser = data?.session?.user || null;
   if (currentUser) {
     authChoice = "signed";
+    window.localStorage.removeItem(guestSessionKey);
     setStatus(`Вход: ${currentUser.email}`);
   } else {
+    authChoice = isGuestSession() ? "guest" : null;
     setStatus("Не выполнен вход");
   }
   updateRankedAvailability();
+  updateSessionPanel();
 }
 
 async function signUp() {
@@ -775,10 +849,7 @@ async function signIn() {
 }
 
 function continueAsGuest() {
-  authChoice = "guest";
-  guestWarnEl.classList.add("active");
-  setAuthMessage("Режим гостя активирован.");
-  setStep("setup");
+  enterGuestSession(true);
 }
 
 function getMods() {
@@ -1170,7 +1241,7 @@ function bindTouchButton(el, onPress, onRelease) {
   el.addEventListener("mouseleave", onRelease);
 }
 
-function startSelectedGame() {
+async function startSelectedGame() {
   if (!runtimeReady) {
     spawnToast("Движок еще загружается", true);
     return;
@@ -1216,6 +1287,10 @@ function startSelectedGame() {
 
   setAmbientTarget(ambientBase() + (isRanked ? 0.004 : 0));
   updateModeHud(currentMode);
+  if (isGuestSession()) {
+    spawnToast("ГОСТЬ: ПРОГРЕСС НЕ СОХРАНЯЕТСЯ", true);
+  }
+  await playLaunchTransition();
   hideOverlay();
   if (canvasEl) {
     requestAnimationFrame(() => canvasEl.focus());
@@ -1299,6 +1374,24 @@ function initEvents() {
   btnSignUp.addEventListener("click", signUp);
   btnGuest.addEventListener("click", continueAsGuest);
   btnBackAuth.addEventListener("click", () => setStep("auth"));
+  if (btnOpenAuth) {
+    btnOpenAuth.addEventListener("click", () => {
+      setStep("auth");
+      setAuthMessage("Войдите, чтобы сохранять прогресс и рейтинг.");
+    });
+  }
+  if (btnLogout) {
+    btnLogout.addEventListener("click", async () => {
+      await supa.auth.signOut();
+      currentUser = null;
+      authChoice = null;
+      setStatus("Не выполнен вход");
+      setStep("auth");
+      updateRankedAvailability();
+      updateSessionPanel();
+      spawnToast("ВЫХОД ВЫПОЛНЕН", true);
+    });
+  }
   btnStartGame.addEventListener("click", startSelectedGame);
 
   btnModeAi.addEventListener("click", () => selectMode("ai"));
