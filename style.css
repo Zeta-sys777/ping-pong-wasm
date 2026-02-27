@@ -909,6 +909,17 @@ input:focus {
   flex: 1 1 120px;
 }
 
+.theme-row button {
+  background: linear-gradient(145deg, rgba(9, 14, 24, 0.95), rgba(7, 12, 20, 0.88)) !important;
+  color: var(--text);
+  border: 1px solid rgba(var(--accent-rgb), 0.26);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+}
+
+.theme-row button:hover {
+  border-color: rgba(var(--accent-rgb), 0.45);
+}
+
 button {
   flex: 1;
   position: relative;
@@ -1307,6 +1318,10 @@ body.ai-mode #canvas-holder::before {
   display: grid;
   gap: 6px;
   align-content: start;
+  background: linear-gradient(145deg, rgba(8, 14, 22, 0.94), rgba(8, 14, 20, 0.88));
+  color: var(--text);
+  border: 1px solid rgba(var(--accent-rgb), 0.22);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.32);
   --tilt-x: 0deg;
   --tilt-y: 0deg;
   transform: perspective(720px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateZ(0);
@@ -1333,13 +1348,18 @@ body.ai-mode #canvas-holder::before {
 .mode-card .mode-desc {
   font-size: 11px;
   line-height: 1.4;
-  color: rgba(5, 18, 13, 0.8);
+  color: var(--muted);
   transform: translateZ(14px);
 }
 
 .mode-card.secondary .mode-desc,
 .mode-card.ghost .mode-desc {
   color: var(--muted);
+}
+
+.mode-card.secondary,
+.mode-card.ghost {
+  background: linear-gradient(145deg, rgba(8, 14, 22, 0.9), rgba(7, 12, 18, 0.85));
 }
 
 @media (hover: none) {
