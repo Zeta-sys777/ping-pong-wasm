@@ -1107,7 +1107,6 @@ function updateScoreHud(left, right) {
     }
     triggerGoalShock();
     spawnToast("TX CONFIRMED", currentMode === 1);
-    spawnToast("REPLAY", true);
     writeTerminal("GOAL: CONFIRMED");
     flashBadge(badgeTxEl, "TX CONFIRMED");
     goalThump();

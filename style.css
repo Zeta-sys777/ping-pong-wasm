@@ -369,6 +369,63 @@ body.mode-arcade #canvas-holder {
   animation: gridSlide 14s linear infinite;
 }
 
+.arena-mode-fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.48;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(var(--accent-rgb), 0.14), transparent 58%),
+    linear-gradient(115deg, transparent 0 44%, rgba(var(--accent-2-rgb), 0.18) 50%, transparent 56%);
+  animation: arenaPulse 6s ease-in-out infinite;
+}
+
+body.mode-ai .arena-mode-fx {
+  background:
+    radial-gradient(circle at 22% 62%, rgba(61, 255, 182, 0.2), transparent 46%),
+    radial-gradient(circle at 78% 38%, rgba(32, 184, 255, 0.2), transparent 44%),
+    repeating-linear-gradient(90deg, rgba(32, 184, 255, 0.07) 0, rgba(32, 184, 255, 0.07) 1px, transparent 1px, transparent 26px);
+}
+
+body.mode-ranked .arena-mode-fx {
+  background:
+    radial-gradient(circle at 18% 70%, rgba(255, 179, 71, 0.24), transparent 44%),
+    radial-gradient(circle at 82% 30%, rgba(255, 106, 61, 0.22), transparent 44%),
+    repeating-linear-gradient(0deg, rgba(255, 179, 71, 0.08) 0, rgba(255, 179, 71, 0.08) 1px, transparent 1px, transparent 18px);
+}
+
+body.mode-pvp .arena-mode-fx {
+  background:
+    radial-gradient(circle at 30% 50%, rgba(195, 123, 255, 0.22), transparent 46%),
+    radial-gradient(circle at 70% 48%, rgba(61, 255, 182, 0.18), transparent 48%),
+    linear-gradient(90deg, transparent 48%, rgba(195, 123, 255, 0.12) 50%, transparent 52%);
+}
+
+body.mode-blitz .arena-mode-fx {
+  animation-duration: 3.4s;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 94, 77, 0.25), transparent 40%),
+    radial-gradient(circle at 50% 74%, rgba(255, 179, 71, 0.25), transparent 42%),
+    repeating-linear-gradient(120deg, rgba(255, 106, 61, 0.1) 0, rgba(255, 106, 61, 0.1) 1px, transparent 1px, transparent 20px);
+}
+
+body.mode-training .arena-mode-fx {
+  animation-duration: 8s;
+  background:
+    radial-gradient(circle at 22% 42%, rgba(124, 255, 121, 0.2), transparent 46%),
+    radial-gradient(circle at 80% 56%, rgba(47, 158, 68, 0.18), transparent 46%),
+    repeating-linear-gradient(0deg, rgba(124, 255, 121, 0.06) 0, rgba(124, 255, 121, 0.06) 1px, transparent 1px, transparent 28px);
+}
+
+body.mode-arcade .arena-mode-fx {
+  background:
+    radial-gradient(circle at 18% 68%, rgba(255, 217, 94, 0.24), transparent 44%),
+    radial-gradient(circle at 82% 32%, rgba(77, 181, 255, 0.2), transparent 46%),
+    repeating-linear-gradient(90deg, rgba(255, 217, 94, 0.08) 0, rgba(255, 217, 94, 0.08) 1px, transparent 1px, transparent 24px);
+}
+
 .frame-corners {
   position: absolute;
   inset: 6px;
@@ -1585,6 +1642,11 @@ ol li {
   100% { transform: translate3d(0, 22px, 0); }
 }
 
+@keyframes arenaPulse {
+  0%, 100% { opacity: 0.34; transform: scale(1); }
+  50% { opacity: 0.62; transform: scale(1.02); }
+}
+
 @keyframes bootScan {
   0% { transform: translateY(-8%); opacity: 0.55; }
   50% { transform: translateY(8%); opacity: 0.95; }
@@ -1693,6 +1755,7 @@ ol li {
   .sidebar,
   .hint,
   .ai-badge,
+  .arena-mode-fx,
   .hud,
   .hud-badges,
   .hud-metrics,
@@ -1751,6 +1814,7 @@ body.mobile-lite .code-rain,
 body.mobile-lite .grain,
 body.mobile-lite .velocity-aura,
 body.mobile-lite .cyber-grid,
+body.mobile-lite .arena-mode-fx,
 body.mobile-lite .frame-corners,
 body.mobile-lite .overlay-demo,
 body.mobile-lite .launch-transition {
