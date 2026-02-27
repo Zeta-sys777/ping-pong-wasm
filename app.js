@@ -217,8 +217,14 @@ const modeButtons = {
 };
 
 function ccall(name, returnType = null, types = [], args = []) {
-  if (!window.Module || !Module.ccall) return;
-  Module.ccall(name, returnType, types, args);
+  if (!window.Module || !Module.ccall) return false;
+  try {
+    Module.ccall(name, returnType, types, args);
+    return true;
+  } catch (error) {
+    console.warn(`[ccall] ${name} unavailable`, error);
+    return false;
+  }
 }
 
 function ensureMainStarted() {
@@ -1259,40 +1265,44 @@ async function startSelectedGame() {
     spawnToast("Ошибка конфигурации режима", true);
     return;
   }
+  try {
+    saveSetupOptions();
+    ensureAudio();
+    ensureAmbient();
+    ensureMainStarted();
+    setSpeedEnergy(0);
+    paused = false;
+    updatePauseButton();
 
-  saveSetupOptions();
-  ensureAudio();
-  ensureAmbient();
-  ensureMainStarted();
-  setSpeedEnergy(0);
-  paused = false;
-  updatePauseButton();
+    currentMode = setup.runtimeMode;
+    isRanked = !!setup.ranked;
+    currentAiLevel = setup.aiLevel;
+    currentTargetPoints = setup.targetPoints;
 
-  currentMode = setup.runtimeMode;
-  isRanked = !!setup.ranked;
-  currentAiLevel = setup.aiLevel;
-  currentTargetPoints = setup.targetPoints;
+    applySetupToRuntime(setup);
+    ccall("set_game_mode", null, ["number"], [currentMode]);
+    ccall("set_ranked", null, ["number"], [isRanked ? 1 : 0]);
+    if (currentMode === 1) {
+      ccall("set_ai_level", null, ["number"], [setup.aiLevel]);
+    }
+    ccall("set_paused", null, ["number"], [0]);
+    ccall("reset_game_api", null, [], []);
+    clearTouchInput();
+    setInputLock(false);
 
-  applySetupToRuntime(setup);
-  ccall("set_game_mode", null, ["number"], [currentMode]);
-  ccall("set_ranked", null, ["number"], [isRanked ? 1 : 0]);
-  if (currentMode === 1) {
-    ccall("set_ai_level", null, ["number"], [setup.aiLevel]);
-  }
-  ccall("set_paused", null, ["number"], [0]);
-  ccall("reset_game_api", null, [], []);
-  clearTouchInput();
-  setInputLock(false);
-
-  setAmbientTarget(ambientBase() + (isRanked ? 0.004 : 0));
-  updateModeHud(currentMode);
-  if (isGuestSession()) {
-    spawnToast("ГОСТЬ: ПРОГРЕСС НЕ СОХРАНЯЕТСЯ", true);
-  }
-  await playLaunchTransition();
-  hideOverlay();
-  if (canvasEl) {
-    requestAnimationFrame(() => canvasEl.focus());
+    setAmbientTarget(ambientBase() + (isRanked ? 0.004 : 0));
+    updateModeHud(currentMode);
+    if (isGuestSession()) {
+      spawnToast("ГОСТЬ: ПРОГРЕСС НЕ СОХРАНЯЕТСЯ", true);
+    }
+    await playLaunchTransition();
+    hideOverlay();
+    if (canvasEl) {
+      requestAnimationFrame(() => canvasEl.focus());
+    }
+  } catch (error) {
+    console.error("startSelectedGame failed", error);
+    spawnToast("ОШИБКА ЗАПУСКА: ОБНОВИТЕ СТРАНИЦУ", true);
   }
 }
 
