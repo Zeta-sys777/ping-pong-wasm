@@ -27,6 +27,9 @@ const btnStartGame = document.getElementById("btn-start-game");
 const btnModeAi = document.getElementById("btn-mode-ai");
 const btnModeRanked = document.getElementById("btn-mode-ranked");
 const btnModePvp = document.getElementById("btn-mode-pvp");
+const btnModeBlitz = document.getElementById("btn-mode-blitz");
+const btnModeTraining = document.getElementById("btn-mode-training");
+const btnModeArcade = document.getElementById("btn-mode-arcade");
 const modeCardEls = Array.from(document.querySelectorAll(".mode-card"));
 
 const tabWeek = document.getElementById("tab-week");
@@ -67,9 +70,15 @@ const toastLayerEl = document.getElementById("toast-layer");
 const modFastEl = document.getElementById("mod-fast");
 const modBigEl = document.getElementById("mod-big");
 const modNarrowEl = document.getElementById("mod-narrow");
+const matchTargetEl = document.getElementById("match-target");
+const matchAiLevelEl = document.getElementById("match-ai-level");
+const matchTempoEl = document.getElementById("match-tempo");
+const setupLockNoteEl = document.getElementById("setup-lock-note");
 const themeNeonEl = document.getElementById("theme-neon");
 const themeGhostEl = document.getElementById("theme-ghost");
 const themeCircuitEl = document.getElementById("theme-circuit");
+const themeMatrixEl = document.getElementById("theme-matrix");
+const themeEmberEl = document.getElementById("theme-ember");
 const audioProfileEl = document.getElementById("audio-profile");
 
 const touchLeftUp = document.getElementById("touch-left-up");
@@ -93,6 +102,7 @@ let lastWinner = null;
 let lastRank = "Kernel";
 let currentAiLevel = 1;
 let lastAchievementAt = 0;
+let currentTargetPoints = 7;
 
 let inputLeftUp = false;
 let inputLeftDown = false;
@@ -118,6 +128,79 @@ const audioProfiles = {
   soft: { blipFreq: 560, blipGain: 0.025, blipType: "sine", thumpFreq: 140, thumpGain: 0.035, thumpType: "sine", ambientFreq: 40, ambientGain: 0.008 },
   arcade: { blipFreq: 720, blipGain: 0.035, blipType: "triangle", thumpFreq: 180, thumpGain: 0.05, thumpType: "sawtooth", ambientFreq: 48, ambientGain: 0.012 },
   techno: { blipFreq: 880, blipGain: 0.04, blipType: "square", thumpFreq: 220, thumpGain: 0.06, thumpType: "sawtooth", ambientFreq: 58, ambientGain: 0.016 },
+};
+
+const modeCatalog = {
+  ai: {
+    label: "Нейросеть",
+    desc: "Соло-режим: гибкие настройки сложности и темпа.",
+    runtimeMode: 1,
+    ranked: false,
+    target: 7,
+    aiLevel: 1,
+    speedScale: 1.0,
+    mods: { fast: false, big: false, narrow: false },
+  },
+  ranked: {
+    label: "Рейтинг",
+    desc: "Турнирный режим: Hard-ИИ и сохранение в лидерборд.",
+    runtimeMode: 1,
+    ranked: true,
+    target: 7,
+    aiLevel: 2,
+    speedScale: 1.0,
+    mods: { fast: false, big: false, narrow: false },
+    lockSetup: true,
+  },
+  pvp: {
+    label: "2 игрока",
+    desc: "Локальный матч 1v1: A/D против стрелок.",
+    runtimeMode: 0,
+    ranked: false,
+    target: 7,
+    aiLevel: 1,
+    speedScale: 1.0,
+    mods: { fast: false, big: false, narrow: false },
+  },
+  blitz: {
+    label: "Блиц",
+    desc: "Короткий и агрессивный матч до 5 очков.",
+    runtimeMode: 1,
+    ranked: false,
+    target: 5,
+    aiLevel: 2,
+    speedScale: 1.18,
+    mods: { fast: true, big: false, narrow: true },
+  },
+  training: {
+    label: "Тренировка",
+    desc: "Спокойный режим для разогрева и тренировки реакции.",
+    runtimeMode: 1,
+    ranked: false,
+    target: 15,
+    aiLevel: 0,
+    speedScale: 0.9,
+    mods: { fast: false, big: true, narrow: false },
+  },
+  arcade: {
+    label: "Аркада+",
+    desc: "PvP с повышенным темпом и длинным матчем до 11.",
+    runtimeMode: 0,
+    ranked: false,
+    target: 11,
+    aiLevel: 1,
+    speedScale: 1.1,
+    mods: { fast: true, big: false, narrow: false },
+  },
+};
+
+const modeButtons = {
+  ai: btnModeAi,
+  ranked: btnModeRanked,
+  pvp: btnModePvp,
+  blitz: btnModeBlitz,
+  training: btnModeTraining,
+  arcade: btnModeArcade,
 };
 
 function ccall(name, returnType = null, types = [], args = []) {
@@ -176,15 +259,130 @@ function setStep(step) {
 }
 
 function describeMode(mode) {
-  if (mode === "ai") return "Соло-режим: один игрок против нейросети.";
-  if (mode === "ranked") return "Рейтинг: сложность Hard, результат попадет в таблицу лидеров.";
-  if (mode === "pvp") return "Локальный матч: A/D для левого, стрелки для правого игрока.";
-  return "Выберите режим, чтобы продолжить.";
+  if (!mode || !modeCatalog[mode]) return "Выберите режим, чтобы продолжить.";
+  return modeCatalog[mode].desc;
+}
+
+function clampNumber(v, lo, hi, fallback) {
+  if (!Number.isFinite(v)) return fallback;
+  if (v < lo) return lo;
+  if (v > hi) return hi;
+  return v;
+}
+
+function parseSelectNumber(el) {
+  if (!el) return null;
+  if (el.value === "auto") return null;
+  const n = Number(el.value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function applyModePresetToSetup(mode) {
+  const preset = modeCatalog[mode];
+  if (!preset) return;
+  if (matchTargetEl) matchTargetEl.value = "auto";
+  if (matchAiLevelEl) matchAiLevelEl.value = "auto";
+  if (matchTempoEl) matchTempoEl.value = "auto";
+  if (modFastEl) modFastEl.checked = !!preset.mods.fast;
+  if (modBigEl) modBigEl.checked = !!preset.mods.big;
+  if (modNarrowEl) modNarrowEl.checked = !!preset.mods.narrow;
+}
+
+function updateSetupAvailability(mode = selectedMode) {
+  const preset = modeCatalog[mode];
+  if (!preset) return;
+  const lockAll = !!preset.lockSetup;
+  const aiRelevant = preset.runtimeMode === 1;
+
+  if (matchTargetEl) matchTargetEl.disabled = lockAll;
+  if (matchTempoEl) matchTempoEl.disabled = lockAll;
+  if (matchAiLevelEl) matchAiLevelEl.disabled = lockAll || !aiRelevant;
+  if (modFastEl) modFastEl.disabled = lockAll;
+  if (modBigEl) modBigEl.disabled = lockAll;
+  if (modNarrowEl) modNarrowEl.disabled = lockAll;
+
+  if (lockAll) {
+    if (matchTargetEl) matchTargetEl.value = String(preset.target);
+    if (matchAiLevelEl) matchAiLevelEl.value = String(preset.aiLevel);
+    if (matchTempoEl) matchTempoEl.value = String(preset.speedScale);
+    if (modFastEl) modFastEl.checked = !!preset.mods.fast;
+    if (modBigEl) modBigEl.checked = !!preset.mods.big;
+    if (modNarrowEl) modNarrowEl.checked = !!preset.mods.narrow;
+    if (setupLockNoteEl) {
+      setupLockNoteEl.textContent = "Рейтинг фиксирует настройки: честные условия для лидерборда.";
+    }
+    return;
+  }
+
+  if (!aiRelevant && matchAiLevelEl) {
+    matchAiLevelEl.value = "auto";
+  }
+
+  if (setupLockNoteEl) {
+    setupLockNoteEl.textContent = aiRelevant
+      ? "Можно менять цель матча, темп и сложность ИИ."
+      : "PvP: сложность ИИ отключена, остальные параметры можно менять.";
+  }
+}
+
+function resolveModeSetup(mode = selectedMode) {
+  const preset = modeCatalog[mode];
+  if (!preset) return null;
+
+  let targetPoints = preset.target;
+  let aiLevel = preset.aiLevel;
+  let speedScale = preset.speedScale;
+  let mods = { ...preset.mods };
+
+  if (!preset.lockSetup) {
+    const targetOverride = parseSelectNumber(matchTargetEl);
+    const aiOverride = parseSelectNumber(matchAiLevelEl);
+    const tempoOverride = parseSelectNumber(matchTempoEl);
+    if (targetOverride !== null) {
+      targetPoints = Math.round(clampNumber(targetOverride, 3, 21, preset.target));
+    }
+    if (preset.runtimeMode === 1 && aiOverride !== null) {
+      aiLevel = Math.round(clampNumber(aiOverride, 0, 2, preset.aiLevel));
+    }
+    if (tempoOverride !== null) {
+      speedScale = clampNumber(tempoOverride, 0.75, 1.35, preset.speedScale);
+    }
+    mods = getMods();
+  }
+
+  return {
+    id: mode,
+    label: preset.label,
+    ranked: preset.ranked,
+    runtimeMode: preset.runtimeMode,
+    targetPoints,
+    aiLevel,
+    speedScale,
+    mods,
+  };
 }
 
 function updateModeSummary(mode = selectedMode) {
   if (!modeSummaryEl) return;
-  modeSummaryEl.textContent = describeMode(mode);
+  const setup = resolveModeSetup(mode);
+  if (!setup) {
+    modeSummaryEl.textContent = describeMode(mode);
+    return;
+  }
+  const aiLabels = ["Легко", "Нормально", "Сложно"];
+  const parts = [`До ${setup.targetPoints}`, `Темп x${setup.speedScale.toFixed(2)}`];
+  if (setup.runtimeMode === 1) {
+    parts.push(`ИИ: ${aiLabels[setup.aiLevel] || aiLabels[1]}`);
+  }
+  const modNames = [];
+  if (setup.mods.fast) modNames.push("Скоростной мяч");
+  if (setup.mods.big) modNames.push("Большой мяч");
+  if (setup.mods.narrow) modNames.push("Узкие ракетки");
+  parts.push(modNames.length ? modNames.join(", ") : "Стандартные модификаторы");
+  if (setup.ranked) {
+    parts.push("Результат попадет в таблицу лидеров");
+  }
+  modeSummaryEl.textContent = `${describeMode(mode)} ${parts.join(" • ")}`;
 }
 
 function updatePauseButton() {
@@ -448,6 +646,7 @@ function showOverlayForOnboarding() {
     setStep("auth");
   }
   updateModeSummary();
+  updateSetupAvailability();
   btnStartGame.disabled = !selectedMode;
   updateRankedAvailability();
 }
@@ -462,13 +661,36 @@ function hideOverlay() {
 function updateRankedAvailability() {
   btnModeRanked.disabled = !currentUser;
   btnModeRanked.title = currentUser ? "" : "Для Ranked нужен вход";
+  if (!currentUser && selectedMode === "ranked") {
+    selectedMode = null;
+    for (const card of modeCardEls) {
+      card.classList.remove("theme-active");
+    }
+    document.body.classList.remove("mode-ai", "mode-ranked", "mode-pvp", "mode-blitz", "mode-training", "mode-arcade");
+    btnStartGame.disabled = true;
+    updateModeSummary();
+  }
 }
 
-function selectMode(mode) {
+function selectMode(mode, options = {}) {
+  if (!modeCatalog[mode]) return;
+  const preserveSetup = !!options.preserveSetup;
+  if (mode === "ranked" && !currentUser) {
+    spawnToast("Для Ranked нужен вход", true);
+    setStep("auth");
+    return;
+  }
   selectedMode = mode;
-  btnModeAi.classList.toggle("theme-active", mode === "ai");
-  btnModeRanked.classList.toggle("theme-active", mode === "ranked");
-  btnModePvp.classList.toggle("theme-active", mode === "pvp");
+  for (const [id, button] of Object.entries(modeButtons)) {
+    if (!button) continue;
+    button.classList.toggle("theme-active", id === mode);
+  }
+  document.body.classList.remove("mode-ai", "mode-ranked", "mode-pvp", "mode-blitz", "mode-training", "mode-arcade");
+  document.body.classList.add(`mode-${mode}`);
+  if (!preserveSetup) {
+    applyModePresetToSetup(mode);
+  }
+  updateSetupAvailability(mode);
   updateModeSummary(mode);
   btnStartGame.disabled = false;
 }
@@ -567,33 +789,60 @@ function getMods() {
   };
 }
 
-function applyModifiersToRuntime() {
-  const mods = getMods();
-  ccall("set_modifiers", null, ["number", "number", "number"], [mods.fast ? 1 : 0, mods.big ? 1 : 0, mods.narrow ? 1 : 0]);
+function applySetupToRuntime(setup) {
+  if (!setup) return;
+  ccall("set_speed_scale", null, ["number"], [setup.speedScale]);
+  ccall("set_target_points", null, ["number"], [setup.targetPoints]);
+  ccall("set_modifiers", null, ["number", "number", "number"], [
+    setup.mods.fast ? 1 : 0,
+    setup.mods.big ? 1 : 0,
+    setup.mods.narrow ? 1 : 0,
+  ]);
 }
 
-function saveMods() {
-  window.localStorage.setItem("pong_mods", JSON.stringify(getMods()));
+function saveSetupOptions() {
+  const payload = {
+    mods: getMods(),
+    target: matchTargetEl ? matchTargetEl.value : "auto",
+    aiLevel: matchAiLevelEl ? matchAiLevelEl.value : "auto",
+    tempo: matchTempoEl ? matchTempoEl.value : "auto",
+  };
+  window.localStorage.setItem("pong_setup_options", JSON.stringify(payload));
 }
 
-function loadMods() {
-  const raw = window.localStorage.getItem("pong_mods");
+function loadSetupOptions() {
+  const raw = window.localStorage.getItem("pong_setup_options");
   if (!raw) return;
   try {
-    const m = JSON.parse(raw);
-    modFastEl.checked = !!m.fast;
-    modBigEl.checked = !!m.big;
-    modNarrowEl.checked = !!m.narrow;
+    const options = JSON.parse(raw);
+    if (options.mods) {
+      modFastEl.checked = !!options.mods.fast;
+      modBigEl.checked = !!options.mods.big;
+      modNarrowEl.checked = !!options.mods.narrow;
+    }
+    if (matchTargetEl && typeof options.target === "string") {
+      matchTargetEl.value = options.target;
+    }
+    if (matchAiLevelEl && typeof options.aiLevel === "string") {
+      matchAiLevelEl.value = options.aiLevel;
+    }
+    if (matchTempoEl && typeof options.tempo === "string") {
+      matchTempoEl.value = options.tempo;
+    }
   } catch (_) {}
 }
 
 function setTheme(name) {
-  document.body.classList.remove("theme-ghost", "theme-circuit");
+  document.body.classList.remove("theme-ghost", "theme-circuit", "theme-matrix", "theme-ember");
   if (name === "ghost") document.body.classList.add("theme-ghost");
   if (name === "circuit") document.body.classList.add("theme-circuit");
+  if (name === "matrix") document.body.classList.add("theme-matrix");
+  if (name === "ember") document.body.classList.add("theme-ember");
   themeNeonEl.classList.toggle("theme-active", name === "neon");
   themeGhostEl.classList.toggle("theme-active", name === "ghost");
   themeCircuitEl.classList.toggle("theme-active", name === "circuit");
+  if (themeMatrixEl) themeMatrixEl.classList.toggle("theme-active", name === "matrix");
+  if (themeEmberEl) themeEmberEl.classList.toggle("theme-active", name === "ember");
   window.localStorage.setItem("pong_theme", name);
 }
 
@@ -754,25 +1003,26 @@ function updateRallyHud(rally) {
 }
 
 function updateModeHud(mode) {
-  let modeText = "2 игрока";
+  const labels = ["Легко", "Нормально", "Сложно"];
+  const preset = modeCatalog[selectedMode] || null;
+  let modeText = preset ? preset.label : (mode === 1 ? "Нейросеть" : "2 игрока");
   if (mode === 1) {
     if (isRanked) {
-      modeText = "Нейросеть (Рейтинг, Hard)";
+      modeText = "Рейтинг (Hard)";
       writeTerminal("MODE: RANKED");
       flashBadge(badgeLedgerEl, "LEDGER LOCKED");
     } else {
-      const labels = ["Легко", "Нормально", "Сложно"];
-      modeText = `Нейросеть (${labels[currentAiLevel]})`;
-      writeTerminal("MODE: NEURAL");
+      modeText = `${modeText} (${labels[currentAiLevel] || labels[1]})`;
+      writeTerminal(`MODE: ${(preset ? preset.label : "NEURAL").toUpperCase()}`);
       flashBadge(badgeLedgerEl, "LEDGER READY");
     }
   } else {
-    modeText = "2 игрока";
-    writeTerminal("MODE: PVP");
+    writeTerminal(`MODE: ${(preset ? preset.label : "PVP").toUpperCase()}`);
     flashBadge(badgeLedgerEl, "LEDGER READY");
   }
   hudModeEl.textContent = modeText;
   if (mobileModeEl) mobileModeEl.textContent = modeText;
+  hudTargetEl.textContent = `До ${currentTargetPoints}`;
   updateControlHint();
 }
 
@@ -934,8 +1184,13 @@ function startSelectedGame() {
     setStep("auth");
     return;
   }
+  const setup = resolveModeSetup(selectedMode);
+  if (!setup) {
+    spawnToast("Ошибка конфигурации режима", true);
+    return;
+  }
 
-  saveMods();
+  saveSetupOptions();
   ensureAudio();
   ensureAmbient();
   ensureMainStarted();
@@ -943,15 +1198,16 @@ function startSelectedGame() {
   paused = false;
   updatePauseButton();
 
-  currentMode = selectedMode === "pvp" ? 0 : 1;
-  isRanked = selectedMode === "ranked";
-  if (isRanked) currentAiLevel = 2;
+  currentMode = setup.runtimeMode;
+  isRanked = !!setup.ranked;
+  currentAiLevel = setup.aiLevel;
+  currentTargetPoints = setup.targetPoints;
 
-  applyModifiersToRuntime();
+  applySetupToRuntime(setup);
   ccall("set_game_mode", null, ["number"], [currentMode]);
   ccall("set_ranked", null, ["number"], [isRanked ? 1 : 0]);
   if (currentMode === 1) {
-    ccall("set_ai_level", null, ["number"], [currentAiLevel]);
+    ccall("set_ai_level", null, ["number"], [setup.aiLevel]);
   }
   ccall("set_paused", null, ["number"], [0]);
   ccall("reset_game_api", null, [], []);
@@ -1010,7 +1266,10 @@ function wireModuleCallbacks() {
 
   const onMode = (mode) => updateModeHud(mode);
   const onPoints = (left, right) => updateScoreHud(left, right);
-  const onTarget = (target) => { hudTargetEl.textContent = `До ${target}`; };
+  const onTarget = (target) => {
+    currentTargetPoints = target;
+    hudTargetEl.textContent = `До ${target}`;
+  };
   const onAiLevel = (level) => { currentAiLevel = level; updateModeHud(1); };
   const onWinner = (winner) => { lastWinner = winner; };
 
@@ -1045,10 +1304,24 @@ function initEvents() {
   btnModeAi.addEventListener("click", () => selectMode("ai"));
   btnModeRanked.addEventListener("click", () => selectMode("ranked"));
   btnModePvp.addEventListener("click", () => selectMode("pvp"));
+  if (btnModeBlitz) btnModeBlitz.addEventListener("click", () => selectMode("blitz"));
+  if (btnModeTraining) btnModeTraining.addEventListener("click", () => selectMode("training"));
+  if (btnModeArcade) btnModeArcade.addEventListener("click", () => selectMode("arcade"));
+
+  const setupControls = [matchTargetEl, matchAiLevelEl, matchTempoEl, modFastEl, modBigEl, modNarrowEl];
+  for (const control of setupControls) {
+    if (!control) continue;
+    control.addEventListener("change", () => {
+      updateModeSummary();
+      saveSetupOptions();
+    });
+  }
 
   themeNeonEl.addEventListener("click", () => setTheme("neon"));
   themeGhostEl.addEventListener("click", () => setTheme("ghost"));
   themeCircuitEl.addEventListener("click", () => setTheme("circuit"));
+  if (themeMatrixEl) themeMatrixEl.addEventListener("click", () => setTheme("matrix"));
+  if (themeEmberEl) themeEmberEl.addEventListener("click", () => setTheme("ember"));
 
   audioProfileEl.addEventListener("change", (e) => setAudioProfile(e.target.value));
 
@@ -1135,7 +1408,7 @@ function initEvents() {
 async function init() {
   initEvents();
   wireModuleCallbacks();
-  loadMods();
+  loadSetupOptions();
   loadTheme();
   loadAudioProfile();
   await refreshUser();
@@ -1144,7 +1417,7 @@ async function init() {
 
   hudModeEl.textContent = "2 игрока";
   hudScoreEl.textContent = "0 - 0";
-  hudTargetEl.textContent = "До 7";
+  hudTargetEl.textContent = `До ${currentTargetPoints}`;
   hudSpeedEl.textContent = "0";
   hudRallyEl.textContent = "0";
   hudRankEl.textContent = "Kernel";
@@ -1153,11 +1426,16 @@ async function init() {
   badgeTxEl.textContent = "TX IDLE";
   soundToggleEl.textContent = `Звук: ${audioEnabled ? "Вкл" : "Выкл"}`;
   btnStartGame.disabled = !selectedMode;
+  updateSetupAvailability();
   updateModeSummary();
   updatePauseButton();
   updateControlHint();
   if (mobileModeEl) mobileModeEl.textContent = "2 игрока";
   if (mobileScoreEl) mobileScoreEl.textContent = "0 - 0";
+
+  if (!selectedMode) {
+    selectMode("ai", { preserveSetup: true });
+  }
 
   await playBootSequence();
   showOverlayForOnboarding();

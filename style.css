@@ -29,6 +29,26 @@ body.theme-circuit {
   --glow: rgba(92, 255, 143, 0.45);
 }
 
+body.theme-matrix {
+  --bg: #040a06;
+  --panel: #0a130e;
+  --text: #d7ffe1;
+  --muted: #74c688;
+  --accent: #59ff7f;
+  --accent-2: #2affc9;
+  --glow: rgba(89, 255, 127, 0.45);
+}
+
+body.theme-ember {
+  --bg: #100805;
+  --panel: #1a100b;
+  --text: #ffe8da;
+  --muted: #d39f7d;
+  --accent: #ffb347;
+  --accent-2: #ff6a3d;
+  --glow: rgba(255, 138, 72, 0.45);
+}
+
 * { box-sizing: border-box; }
 
 @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
@@ -216,6 +236,22 @@ body.goal-shock #canvas-holder {
   border-color: rgba(32, 184, 255, 0.52);
   box-shadow: 0 0 24px rgba(32, 184, 255, 0.35), 0 22px 64px rgba(0, 0, 0, 0.58);
   transform: translateY(-1px) scale(1.002);
+}
+
+body.mode-blitz #canvas-holder {
+  border-color: rgba(32, 184, 255, 0.34);
+  box-shadow: 0 0 20px rgba(32, 184, 255, 0.24), 0 20px 60px rgba(0, 0, 0, 0.55);
+}
+
+body.mode-training #canvas-holder {
+  border-color: rgba(61, 255, 182, 0.28);
+  box-shadow: 0 0 16px rgba(61, 255, 182, 0.18), 0 18px 52px rgba(0, 0, 0, 0.5);
+}
+
+body.mode-ranked #canvas-holder,
+body.mode-arcade #canvas-holder {
+  border-color: rgba(255, 186, 84, 0.4);
+  box-shadow: 0 0 22px rgba(255, 158, 77, 0.22), 0 20px 60px rgba(0, 0, 0, 0.56);
 }
 
 .cyber-grid {
@@ -507,9 +543,25 @@ body.goal-shock .mobile-matchbar {
   border-color: rgba(61, 255, 182, 0.12);
 }
 
-.theme-active {
-  box-shadow: 0 0 18px var(--glow);
-  border: 1px solid rgba(61, 255, 182, 0.4);
+button.theme-active,
+.mode-card.theme-active {
+  border: 1px solid rgba(61, 255, 182, 0.62) !important;
+  color: #e6fff5;
+  box-shadow: 0 0 20px var(--glow), 0 14px 30px rgba(0, 0, 0, 0.32);
+  background: linear-gradient(140deg, rgba(61, 255, 182, 0.26), rgba(32, 184, 255, 0.16) 65%, rgba(6, 12, 18, 0.92)) !important;
+}
+
+button.theme-active::after,
+.mode-card.theme-active::after {
+  opacity: 0.62;
+}
+
+.mode-card.theme-active .mode-title {
+  color: #f0fff9;
+}
+
+.mode-card.theme-active .mode-desc {
+  color: rgba(212, 255, 241, 0.94);
 }
 
 .toast-layer {
@@ -710,6 +762,10 @@ body.goal-shock .mobile-matchbar {
   margin-bottom: 10px;
 }
 
+.field.compact {
+  margin-bottom: 6px;
+}
+
 label {
   font-size: 12px;
   color: var(--muted);
@@ -757,6 +813,10 @@ input:focus {
   gap: 8px;
   margin-bottom: 8px;
   flex-wrap: wrap;
+}
+
+.mode-extras .row button {
+  flex: 1 1 120px;
 }
 
 button {
@@ -1226,6 +1286,14 @@ body.ai-mode #canvas-holder::before {
   font-size: 12px;
   color: var(--muted);
   min-height: 16px;
+}
+
+.setup-lock-note {
+  min-height: 14px;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .mode-select.hidden,
