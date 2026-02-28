@@ -100,6 +100,7 @@ const modeCardEls = Array.from(document.querySelectorAll(".mode-card"));
 
 const tabWeek = document.getElementById("tab-week");
 const tabAll = document.getElementById("tab-all");
+const tabRating = document.getElementById("tab-rating");
 const leaderboardTabsEl = document.querySelector(".leaderboard-tabs");
 const weekLabelEl = document.getElementById("week-label");
 const leaderboardEl = document.getElementById("leaderboard");
@@ -202,6 +203,7 @@ let lowFxMode = false;
 let goalShockTimer = null;
 const guestSessionKey = "pong_guest_mode";
 const languageKey = "pong_language";
+const ratingBase = 1000;
 const supportedLanguages = ["ru", "en", "zh"];
 
 function normalizeLanguageCode(raw) {
@@ -299,10 +301,13 @@ const translations = {
     leaderboard_title: "Таблица лидеров",
     tab_week: "Эта неделя",
     tab_all: "За все время",
+    tab_rating: "Рейтинг",
     week_from: "Неделя с {date}",
     leaderboard_error: "Ошибка загрузки",
     leaderboard_empty: "Пока пусто",
+    leaderboard_ranked_missing: "Таблица рейтинга не настроена в Supabase",
     player_default: "Игрок",
+    leaderboard_rating_row: "{name} • {rating} ELO • W{wins}/L{losses}",
     hud_mode: "Режим",
     hud_score: "Счет",
     hud_speed: "Скорость",
@@ -344,6 +349,7 @@ const translations = {
     toast_combo: "Серия x{combo}",
     toast_guest_mode: "ВЫ ВОШЛИ КАК ГОСТЬ",
     toast_signed_out: "ВЫХОД ВЫПОЛНЕН",
+    toast_rating_delta: "РЕЙТИНГ {delta} • {rating}",
     toast_engine_loading: "Движок еще загружается",
     toast_select_mode: "Сначала выберите режим",
     toast_ranked_login: "Для Ranked нужен вход",
@@ -413,6 +419,11 @@ const translations = {
     sound_toggle: "Звук: {state}",
     state_on: "Вкл",
     state_off: "Выкл",
+    rating_division_bronze: "Бронза",
+    rating_division_silver: "Серебро",
+    rating_division_gold: "Золото",
+    rating_division_platinum: "Платина",
+    rating_division_diamond: "Алмаз",
   },
   en: {
     lang_current: "EN",
@@ -478,10 +489,13 @@ const translations = {
     leaderboard_title: "Leaderboard",
     tab_week: "This Week",
     tab_all: "All Time",
+    tab_rating: "Rating",
     week_from: "Week from {date}",
     leaderboard_error: "Load error",
     leaderboard_empty: "No entries yet",
+    leaderboard_ranked_missing: "Rating table is not configured in Supabase",
     player_default: "Player",
+    leaderboard_rating_row: "{name} • {rating} ELO • W{wins}/L{losses}",
     hud_mode: "Mode",
     hud_score: "Score",
     hud_speed: "Speed",
@@ -523,6 +537,7 @@ const translations = {
     toast_combo: "Combo x{combo}",
     toast_guest_mode: "GUEST MODE ENABLED",
     toast_signed_out: "SIGNED OUT",
+    toast_rating_delta: "RATING {delta} • {rating}",
     toast_engine_loading: "Engine is still loading",
     toast_select_mode: "Choose a mode first",
     toast_ranked_login: "Ranked requires login",
@@ -592,6 +607,11 @@ const translations = {
     sound_toggle: "Sound: {state}",
     state_on: "On",
     state_off: "Off",
+    rating_division_bronze: "Bronze",
+    rating_division_silver: "Silver",
+    rating_division_gold: "Gold",
+    rating_division_platinum: "Platinum",
+    rating_division_diamond: "Diamond",
   },
   zh: {
     lang_current: "中文",
@@ -657,10 +677,13 @@ const translations = {
     leaderboard_title: "排行榜",
     tab_week: "本周",
     tab_all: "总榜",
+    tab_rating: "评级",
     week_from: "周起始: {date}",
     leaderboard_error: "加载失败",
     leaderboard_empty: "暂无记录",
+    leaderboard_ranked_missing: "Supabase 中未配置评级表",
     player_default: "玩家",
+    leaderboard_rating_row: "{name} • {rating} ELO • 胜{wins}/负{losses}",
     hud_mode: "模式",
     hud_score: "比分",
     hud_speed: "速度",
@@ -702,6 +725,7 @@ const translations = {
     toast_combo: "连击 x{combo}",
     toast_guest_mode: "已进入游客模式",
     toast_signed_out: "已退出登录",
+    toast_rating_delta: "评级 {delta} • {rating}",
     toast_engine_loading: "引擎仍在加载",
     toast_select_mode: "请先选择模式",
     toast_ranked_login: "排位模式需要登录",
@@ -771,6 +795,11 @@ const translations = {
     sound_toggle: "声音: {state}",
     state_on: "开",
     state_off: "关",
+    rating_division_bronze: "青铜",
+    rating_division_silver: "白银",
+    rating_division_gold: "黄金",
+    rating_division_platinum: "白金",
+    rating_division_diamond: "钻石",
   },
 };
 
@@ -978,6 +1007,7 @@ function localizeStaticUi() {
   setText(leaderboardTitleEl, t("leaderboard_title"));
   setText(tabWeek, t("tab_week"));
   setText(tabAll, t("tab_all"));
+  setText(tabRating, t("tab_rating"));
   setText(matchPanelTitleEl, t("match_panel_title"));
   setText(hudLabelModeEl, t("hud_mode"));
   setText(hudLabelScoreEl, t("hud_score"));
@@ -1374,6 +1404,15 @@ function updateLeaderboardTabIndicator() {
   leaderboardTabsEl.style.setProperty("--tab-visible", "1");
 }
 
+function setLeaderboardMode(mode) {
+  leaderboardMode = mode;
+  if (tabWeek) tabWeek.classList.toggle("active", mode === "week");
+  if (tabAll) tabAll.classList.toggle("active", mode === "all");
+  if (tabRating) tabRating.classList.toggle("active", mode === "rating");
+  updateLeaderboardTabIndicator();
+  loadLeaderboard();
+}
+
 function initParallax() {
   if (lowFxMode) return;
   let raf = 0;
@@ -1600,6 +1639,107 @@ function formatWeekLabel(weekStart) {
   const date = new Date(Date.UTC(y, m - 1, d));
   const shortDate = date.toLocaleDateString(localeTag(), { month: "short", day: "numeric" });
   return t("week_from", { date: shortDate });
+}
+
+function isMissingTableError(error) {
+  if (!error) return false;
+  const code = String(error.code || "");
+  const msg = String(error.message || "").toLowerCase();
+  return code === "42P01" || msg.includes("does not exist") || msg.includes("could not find the table");
+}
+
+function formatSignedNumber(n) {
+  return n >= 0 ? `+${n}` : `${n}`;
+}
+
+function ratingDivisionName(rating) {
+  if (rating >= 1700) return t("rating_division_diamond");
+  if (rating >= 1450) return t("rating_division_platinum");
+  if (rating >= 1250) return t("rating_division_gold");
+  if (rating >= 1080) return t("rating_division_silver");
+  return t("rating_division_bronze");
+}
+
+function computeRatingDelta(currentRating, didWin, aiLevel, styleScore) {
+  const aiRatings = [920, 1020, 1140];
+  const opponent = aiRatings[aiLevel] || aiRatings[1];
+  const expected = 1 / (1 + Math.pow(10, (opponent - currentRating) / 400));
+  const scoreValue = didWin ? 1 : 0;
+  const k = Math.min(36, 24 + Math.floor(Math.max(0, styleScore) / 220));
+  let delta = Math.round(k * (scoreValue - expected));
+  if (didWin) delta = Math.max(8, delta);
+  else delta = Math.min(-6, delta);
+  return delta;
+}
+
+async function submitRankedRating(styleScore) {
+  if (!currentUser) return false;
+  const playerName = obNicknameEl.value.trim() || currentUser.email.split("@")[0];
+  const didWin = lastWinner === 0;
+
+  const { data: existing, error } = await supa
+    .from("ranked_stats")
+    .select("id,rating,games_played,wins,losses,best_style")
+    .eq("user_id", currentUser.id)
+    .maybeSingle();
+
+  if (error && !isMissingTableError(error)) {
+    console.error("ranked_stats query failed", error);
+    return false;
+  }
+  if (error && isMissingTableError(error)) {
+    spawnToast(t("leaderboard_ranked_missing"), true);
+    return false;
+  }
+
+  const currentRating = existing?.rating ?? ratingBase;
+  const delta = computeRatingDelta(currentRating, didWin, currentAiLevel, styleScore);
+  const nextRating = Math.max(0, currentRating + delta);
+  const nextGames = (existing?.games_played ?? 0) + 1;
+  const nextWins = (existing?.wins ?? 0) + (didWin ? 1 : 0);
+  const nextLosses = (existing?.losses ?? 0) + (didWin ? 0 : 1);
+  const nextBestStyle = Math.max(existing?.best_style ?? 0, styleScore);
+
+  let writeError = null;
+  if (!existing) {
+    const { error: e } = await supa.from("ranked_stats").insert({
+      user_id: currentUser.id,
+      player_name: playerName,
+      rating: nextRating,
+      games_played: nextGames,
+      wins: nextWins,
+      losses: nextLosses,
+      best_style: nextBestStyle,
+    });
+    writeError = e;
+  } else {
+    const { error: e } = await supa.from("ranked_stats").update({
+      player_name: playerName,
+      rating: nextRating,
+      games_played: nextGames,
+      wins: nextWins,
+      losses: nextLosses,
+      best_style: nextBestStyle,
+      updated_at: new Date().toISOString(),
+    }).eq("id", existing.id);
+    writeError = e;
+  }
+
+  if (writeError) {
+    console.error("ranked_stats write failed", writeError);
+    return false;
+  }
+
+  spawnToast(t("toast_rating_delta", {
+    delta: formatSignedNumber(delta),
+    rating: `${nextRating} (${ratingDivisionName(nextRating)})`,
+  }), didWin);
+
+  if (leaderboardMode === "rating") {
+    await loadLeaderboard();
+  }
+
+  return true;
 }
 
 async function refreshUser() {
@@ -1947,6 +2087,36 @@ function winnerTitle() {
 }
 
 async function loadLeaderboard() {
+  if (leaderboardMode === "rating") {
+    weekLabelEl.textContent = "";
+    const { data, error } = await supa
+      .from("ranked_stats")
+      .select("player_name,rating,wins,losses,games_played")
+      .order("rating", { ascending: false })
+      .limit(10);
+
+    if (error) {
+      leaderboardEl.innerHTML = `<li>${isMissingTableError(error) ? t("leaderboard_ranked_missing") : t("leaderboard_error")}</li>`;
+      return;
+    }
+    if (!data || data.length === 0) {
+      leaderboardEl.innerHTML = `<li>${t("leaderboard_empty")}</li>`;
+      return;
+    }
+    leaderboardEl.innerHTML = "";
+    for (const row of data) {
+      const li = document.createElement("li");
+      const name = row.player_name || t("player_default");
+      const rating = Math.round(row.rating || ratingBase);
+      const wins = row.wins || 0;
+      const losses = row.losses || 0;
+      const division = ratingDivisionName(rating);
+      li.textContent = t("leaderboard_rating_row", { name, rating: `${rating} ${division}`, wins, losses });
+      leaderboardEl.appendChild(li);
+    }
+    return;
+  }
+
   let query = supa
     .from(leaderboardMode === "week" ? "leaderboard_weekly" : "leaderboard")
     .select("player_name,score,created_at")
@@ -2144,6 +2314,7 @@ function wireModuleCallbacks() {
 
     if (currentMode === 1 && isRanked) {
       submitScore(score);
+      submitRankedRating(score);
     }
 
     setAmbientTarget(0.003);
@@ -2263,21 +2434,9 @@ function initEvents() {
     });
   }
 
-  tabWeek.addEventListener("click", () => {
-    leaderboardMode = "week";
-    tabWeek.classList.add("active");
-    tabAll.classList.remove("active");
-    updateLeaderboardTabIndicator();
-    loadLeaderboard();
-  });
-
-  tabAll.addEventListener("click", () => {
-    leaderboardMode = "all";
-    tabAll.classList.add("active");
-    tabWeek.classList.remove("active");
-    updateLeaderboardTabIndicator();
-    loadLeaderboard();
-  });
+  if (tabWeek) tabWeek.addEventListener("click", () => setLeaderboardMode("week"));
+  if (tabAll) tabAll.addEventListener("click", () => setLeaderboardMode("all"));
+  if (tabRating) tabRating.addEventListener("click", () => setLeaderboardMode("rating"));
 
   if (langTriggerEl && langMenuEl) {
     langTriggerEl.addEventListener("click", (event) => {
