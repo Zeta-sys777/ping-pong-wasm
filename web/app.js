@@ -226,6 +226,8 @@ let lowFxMode = false;
 let goalShockTimer = null;
 const guestSessionKey = "pong_guest_mode";
 const languageKey = "pong_language";
+const rememberAccountKey = "pong_remember_account";
+const lastEmailKey = "pong_last_email";
 const ratingBase = 1000;
 const supportedLanguages = ["ru", "en", "zh"];
 const defaultBetBalance = 500;
@@ -441,6 +443,7 @@ const translations = {
     auth_signup_done_loggedin: "Аккаунт создан, вход выполнен.",
     auth_signup_done_confirm: "Аккаунт создан. Подтвердите почту и потом нажмите «Войти».",
     auth_signin_done: "Вход выполнен.",
+    auth_resume_prompt: "Аккаунт сохранен на этом устройстве. Войдите, чтобы включить рейтинг и Bet Mode.",
     auth_network_error: "Сетевая ошибка. Проверьте интернет и попробуйте снова.",
     setup_lock_ranked: "Рейтинг фиксирует настройки: честные условия для лидерборда.",
     setup_lock_bet: "Bet Mode фиксирует параметры матча: Hard ИИ и ставку токенов.",
@@ -680,6 +683,7 @@ const translations = {
     auth_signup_done_loggedin: "Account created and signed in.",
     auth_signup_done_confirm: "Account created. Confirm email, then click “Sign In”.",
     auth_signin_done: "Signed in successfully.",
+    auth_resume_prompt: "Account is remembered on this device. Sign in to unlock Ranked and Bet Mode.",
     auth_network_error: "Network error. Check internet and try again.",
     setup_lock_ranked: "Ranked locks settings for fair leaderboard conditions.",
     setup_lock_bet: "Bet Mode locks match setup: Hard AI with token stake.",
@@ -919,6 +923,7 @@ const translations = {
     auth_signup_done_loggedin: "账号已创建并登录。",
     auth_signup_done_confirm: "账号已创建。请先验证邮箱后再登录。",
     auth_signin_done: "登录成功。",
+    auth_resume_prompt: "此设备已记住账号。登录后可使用排位和 Bet Mode。",
     auth_network_error: "网络错误，请检查网络后重试。",
     setup_lock_ranked: "排位模式锁定参数，确保排行榜公平。",
     setup_lock_bet: "Bet Mode 锁定参数：Hard AI + 固定押注。",
@@ -1349,6 +1354,22 @@ function setStep(step) {
 
 function isGuestSession() {
   return authChoice === "guest" || window.localStorage.getItem(guestSessionKey) === "1";
+}
+
+function isRememberedAccount() {
+  return window.localStorage.getItem(rememberAccountKey) === "1";
+}
+
+function rememberAccount(email = "") {
+  window.localStorage.setItem(rememberAccountKey, "1");
+  if (email) {
+    window.localStorage.setItem(lastEmailKey, email);
+  }
+}
+
+function clearRememberedAccount() {
+  window.localStorage.removeItem(rememberAccountKey);
+  window.localStorage.removeItem(lastEmailKey);
 }
 
 function updateSessionPanel() {
@@ -1840,13 +1861,19 @@ function showOverlayForOnboarding() {
   overlayScoreEl.textContent = t("overlay_prepare");
   seasonSummaryEl.classList.remove("active");
   seasonSummaryEl.innerHTML = "";
+  if (obEmailEl && !obEmailEl.value) {
+    obEmailEl.value = window.localStorage.getItem(lastEmailKey) || "";
+  }
   if (currentUser) {
     authChoice = "signed";
     setStep("setup");
-  } else if (isGuestSession()) {
+  } else if (isGuestSession() && !isRememberedAccount()) {
     enterGuestSession(false);
   } else {
     setStep("auth");
+    if (isRememberedAccount()) {
+      setAuthMessage(t("auth_resume_prompt"));
+    }
   }
   updateModeSummary();
   updateSetupAvailability();
@@ -2451,6 +2478,7 @@ async function refreshUser() {
   if (currentUser) {
     authChoice = "signed";
     window.localStorage.removeItem(guestSessionKey);
+    rememberAccount(currentUser.email || "");
     setStatus(t("auth_logged_in", { email: currentUser.email }));
   } else {
     authChoice = isGuestSession() ? "guest" : null;
@@ -2476,6 +2504,7 @@ async function signUp() {
 
     await refreshUser();
     if (currentUser) {
+      rememberAccount(currentUser.email || obEmailEl.value.trim());
       setAuthMessage(t("auth_signup_done_loggedin"));
       guestWarnEl.classList.remove("active");
       setStep("setup");
@@ -2503,6 +2532,9 @@ async function signIn() {
       return;
     }
     await refreshUser();
+    if (currentUser) {
+      rememberAccount(currentUser.email || obEmailEl.value.trim());
+    }
     setAuthMessage(t("auth_signin_done"));
     guestWarnEl.classList.remove("active");
     setStep("setup");
@@ -3094,6 +3126,7 @@ function initEvents() {
       await supa.auth.signOut();
       currentUser = null;
       authChoice = null;
+      clearRememberedAccount();
       setStatus(t("auth_not_logged_in"));
       setStep("auth");
       updateRankedAvailability();
