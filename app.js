@@ -22,6 +22,61 @@ const authMessageEl = document.getElementById("auth-message");
 const guestWarnEl = document.getElementById("guest-warn");
 const seasonSummaryEl = document.getElementById("season-summary");
 const modeSummaryEl = document.getElementById("mode-summary");
+const aiBadgeEl = document.getElementById("ai-badge");
+const matchPanelTitleEl = document.getElementById("match-panel-title");
+const leaderboardTitleEl = document.getElementById("leaderboard-title");
+const metricLabelLatencyEl = document.getElementById("metric-label-latency");
+const metricLabelHashEl = document.getElementById("metric-label-hash");
+const metricLabelEntropyEl = document.getElementById("metric-label-entropy");
+
+const authScreenTitleEl = document.getElementById("auth-screen-title");
+const mainMenuTitleEl = document.getElementById("main-menu-title");
+const labelEmailEl = document.getElementById("label-email");
+const labelPasswordEl = document.getElementById("label-password");
+const labelNicknameEl = document.getElementById("label-nickname");
+const modeAiTitleEl = document.getElementById("mode-ai-title");
+const modeAiDescEl = document.getElementById("mode-ai-desc");
+const modeRankedTitleEl = document.getElementById("mode-ranked-title");
+const modeRankedDescEl = document.getElementById("mode-ranked-desc");
+const modePvpTitleEl = document.getElementById("mode-pvp-title");
+const modePvpDescEl = document.getElementById("mode-pvp-desc");
+const modeBlitzTitleEl = document.getElementById("mode-blitz-title");
+const modeBlitzDescEl = document.getElementById("mode-blitz-desc");
+const modeTrainingTitleEl = document.getElementById("mode-training-title");
+const modeTrainingDescEl = document.getElementById("mode-training-desc");
+const modeArcadeTitleEl = document.getElementById("mode-arcade-title");
+const modeArcadeDescEl = document.getElementById("mode-arcade-desc");
+const extrasTitleMatchEl = document.getElementById("extras-title-match");
+const extrasTitleModsEl = document.getElementById("extras-title-mods");
+const extrasTitleThemeEl = document.getElementById("extras-title-theme");
+const extrasTitleSoundEl = document.getElementById("extras-title-sound");
+const labelMatchTargetEl = document.getElementById("label-match-target");
+const labelMatchAiLevelEl = document.getElementById("label-match-ai-level");
+const labelMatchTempoEl = document.getElementById("label-match-tempo");
+const modFastLabelEl = document.getElementById("mod-fast-label");
+const modBigLabelEl = document.getElementById("mod-big-label");
+const modNarrowLabelEl = document.getElementById("mod-narrow-label");
+const hintRankedEl = document.getElementById("hint-ranked");
+const launchTextEl = document.getElementById("launch-text");
+const bootKickerEl = document.getElementById("boot-kicker");
+
+const optTargetAutoEl = document.getElementById("opt-target-auto");
+const optTarget5El = document.getElementById("opt-target-5");
+const optTarget7El = document.getElementById("opt-target-7");
+const optTarget11El = document.getElementById("opt-target-11");
+const optTarget15El = document.getElementById("opt-target-15");
+const optAiAutoEl = document.getElementById("opt-ai-auto");
+const optAi0El = document.getElementById("opt-ai-0");
+const optAi1El = document.getElementById("opt-ai-1");
+const optAi2El = document.getElementById("opt-ai-2");
+const optTempoAutoEl = document.getElementById("opt-tempo-auto");
+const optTempo09El = document.getElementById("opt-tempo-09");
+const optTempo10El = document.getElementById("opt-tempo-10");
+const optTempo11El = document.getElementById("opt-tempo-11");
+const optTempo118El = document.getElementById("opt-tempo-118");
+const audioOptSoftEl = document.getElementById("audio-opt-soft");
+const audioOptArcadeEl = document.getElementById("audio-opt-arcade");
+const audioOptTechnoEl = document.getElementById("audio-opt-techno");
 
 const obEmailEl = document.getElementById("ob-email");
 const obPasswordEl = document.getElementById("ob-password");
@@ -98,6 +153,16 @@ const touchLeftDown = document.getElementById("touch-left-down");
 const touchRightUp = document.getElementById("touch-right-up");
 const touchRightDown = document.getElementById("touch-right-down");
 const touchPause = document.getElementById("touch-pause");
+const hudLabelModeEl = document.getElementById("hud-label-mode");
+const hudLabelScoreEl = document.getElementById("hud-label-score");
+const hudLabelSpeedEl = document.getElementById("hud-label-speed");
+const hudLabelRallyEl = document.getElementById("hud-label-rally");
+const hudLabelRankEl = document.getElementById("hud-label-rank");
+
+const langTriggerEl = document.getElementById("lang-trigger");
+const langMenuEl = document.getElementById("lang-menu");
+const langCurrentEl = document.getElementById("lang-current");
+const langOptionEls = Array.from(document.querySelectorAll(".lang-option"));
 
 let currentUser = null;
 let authChoice = null;
@@ -111,7 +176,7 @@ let leaderboardMode = "week";
 let lastLeftPoints = 0;
 let lastRightPoints = 0;
 let lastWinner = null;
-let lastRank = "Kernel";
+let lastRank = "";
 let currentAiLevel = 1;
 let lastAchievementAt = 0;
 let currentTargetPoints = 7;
@@ -136,6 +201,26 @@ let introPlayed = false;
 let lowFxMode = false;
 let goalShockTimer = null;
 const guestSessionKey = "pong_guest_mode";
+const languageKey = "pong_language";
+const supportedLanguages = ["ru", "en", "zh"];
+
+function normalizeLanguageCode(raw) {
+  if (!raw) return null;
+  const code = String(raw).toLowerCase();
+  if (code.startsWith("ru")) return "ru";
+  if (code.startsWith("zh")) return "zh";
+  if (code.startsWith("en")) return "en";
+  return null;
+}
+
+function detectInitialLanguage() {
+  const saved = normalizeLanguageCode(window.localStorage.getItem(languageKey));
+  if (saved) return saved;
+  const browser = normalizeLanguageCode(navigator.language || "");
+  return browser || "ru";
+}
+
+let currentLanguage = detectInitialLanguage();
 
 const audioProfiles = {
   soft: { blipFreq: 560, blipGain: 0.025, blipType: "sine", thumpFreq: 140, thumpGain: 0.035, thumpType: "sine", ambientFreq: 40, ambientGain: 0.008 },
@@ -143,10 +228,594 @@ const audioProfiles = {
   techno: { blipFreq: 880, blipGain: 0.04, blipType: "square", thumpFreq: 220, thumpGain: 0.06, thumpType: "sawtooth", ambientFreq: 58, ambientGain: 0.016 },
 };
 
+const localeByLanguage = {
+  ru: "ru-RU",
+  en: "en-US",
+  zh: "zh-CN",
+};
+
+const translations = {
+  ru: {
+    lang_current: "RU",
+    lang_switch_label: "Сменить язык",
+    lang_menu_label: "Выбор языка",
+    lang_ru: "Русский",
+    lang_en: "English",
+    lang_zh: "中文",
+    auth_not_logged_in: "Не выполнен вход",
+    auth_logged_in: "Вход: {email}",
+    overlay_prepare: "Подготовим игру по шагам.",
+    step_auth: "Экран входа",
+    step_setup: "Главное меню",
+    auth_screen_title: "Экран входа",
+    main_menu_title: "Главное меню",
+    label_email: "Почта",
+    label_password: "Пароль",
+    label_nickname: "Ник",
+    placeholder_password: "Минимум 6 символов",
+    placeholder_nickname: "Игрок",
+    button_signin: "Войти",
+    button_signup: "Регистрация",
+    button_guest: "Играть как гость",
+    button_start: "Запустить игру",
+    button_back_auth: "Экран входа",
+    button_logout: "Выйти",
+    button_pause: "Пауза",
+    button_resume: "Продолжить",
+    button_skip: "Пропустить",
+    button_open_auth_login: "Войти в аккаунт",
+    button_open_auth_switch: "Сменить аккаунт",
+    guest_warn: "Гость: результаты и прогресс не сохраняются.",
+    guest_banner: "Вы зашли как гость. Чтобы сохранить результат — войдите в аккаунт в настройках.",
+    session_account: "Аккаунт: {email}",
+    session_guest: "Сессия: гость",
+    session_none: "Сессия: без входа",
+    mode_select_prompt: "Выберите режим, чтобы продолжить.",
+    mode_ai_label: "Нейросеть",
+    mode_ai_card_title: "С роботом",
+    mode_ai_desc: "Соло-режим: гибкие настройки сложности и темпа.",
+    mode_ai_card_desc: "Базовый соло-матч против нейросети",
+    mode_ranked_label: "Рейтинг",
+    mode_ranked_card_title: "Рейтинг",
+    mode_ranked_desc: "Турнирный режим: Hard-ИИ и сохранение в лидерборд.",
+    mode_ranked_card_desc: "Сложный режим с отправкой в таблицу",
+    mode_pvp_label: "2 игрока",
+    mode_pvp_card_title: "2 игрока",
+    mode_pvp_desc: "Локальный матч 1v1: A/D против стрелок.",
+    mode_pvp_card_desc: "Локальная дуэль на одной клавиатуре",
+    mode_blitz_label: "Блиц",
+    mode_blitz_card_title: "Блиц",
+    mode_blitz_desc: "Короткий и агрессивный матч до 5 очков.",
+    mode_blitz_card_desc: "Быстрый матч до 5 с агрессивным темпом",
+    mode_training_label: "Тренировка",
+    mode_training_card_title: "Тренировка",
+    mode_training_desc: "Спокойный режим для разогрева и тренировки реакции.",
+    mode_training_card_desc: "Длинный матч с мягким ИИ и большим мячом",
+    mode_arcade_label: "Аркада+",
+    mode_arcade_card_title: "Аркада+",
+    mode_arcade_desc: "PvP с повышенным темпом и длинным матчем до 11.",
+    mode_arcade_card_desc: "PvP до 11, темп выше и плотная динамика",
+    match_panel_title: "Статус матча",
+    leaderboard_title: "Таблица лидеров",
+    tab_week: "Эта неделя",
+    tab_all: "За все время",
+    week_from: "Неделя с {date}",
+    leaderboard_error: "Ошибка загрузки",
+    leaderboard_empty: "Пока пусто",
+    player_default: "Игрок",
+    hud_mode: "Режим",
+    hud_score: "Счет",
+    hud_speed: "Скорость",
+    hud_rally: "Серия",
+    hud_rank: "Ранг",
+    to_points: "До {points}",
+    metric_latency: "Задержка",
+    metric_hash: "Хэшрейт",
+    metric_entropy: "Энтропия",
+    badge_sync_ok: "SYNC OK",
+    badge_ledger_ready: "LEDGER READY",
+    badge_ledger_locked: "LEDGER LOCKED",
+    badge_tx_idle: "TX IDLE",
+    badge_tx_confirmed: "TX CONFIRMED",
+    terminal_session_idle: "SESSION: IDLE",
+    terminal_mode: "РЕЖИМ: {mode}",
+    terminal_rank: "РАНГ: {rank}",
+    terminal_goal_confirmed: "ГОЛ: ПОДТВЕРЖДЕН",
+    terminal_combo: "СЕРИЯ: {combo}",
+    rank_kernel: "Kernel",
+    rank_root: "Root",
+    rank_node: "Node",
+    rank_cipher: "Cipher",
+    rank_zero: "Zero",
+    control_hint_pvp: "A/D — левая ракетка, стрелки — правая. Пробел или кнопка «Пауза».",
+    control_hint_ai: "A/D — управление игрока. Пробел или кнопка «Пауза».",
+    ai_badge: "НЕЙРОСЕТЬ АКТИВНА",
+    launch_sync: "СИНХРОНИЗАЦИЯ АРЕНЫ...",
+    boot_kicker: "NEURAL ARENA",
+    boot_line_0: "Инициализация ядра...",
+    boot_line_1: "Подключение телеметрии...",
+    boot_line_2: "Калибровка арены...",
+    boot_line_3: "Готово к запуску.",
+    toast_audio_profile: "ПРОФИЛЬ ЗВУКА: {name}",
+    toast_tx_confirmed: "TX CONFIRMED",
+    toast_zero_latency: "НУЛЕВАЯ ЗАДЕРЖКА",
+    toast_perfect_deflect: "ИДЕАЛЬНЫЙ ОТБИВ",
+    toast_rank_up: "Новый ранг: {rank}",
+    toast_combo: "Серия x{combo}",
+    toast_guest_mode: "ВЫ ВОШЛИ КАК ГОСТЬ",
+    toast_signed_out: "ВЫХОД ВЫПОЛНЕН",
+    toast_engine_loading: "Движок еще загружается",
+    toast_select_mode: "Сначала выберите режим",
+    toast_ranked_login: "Для Ranked нужен вход",
+    toast_setup_error: "Ошибка конфигурации режима",
+    toast_guest_no_save: "ГОСТЬ: ПРОГРЕСС НЕ СОХРАНЯЕТСЯ",
+    toast_launch_error: "ОШИБКА ЗАПУСКА: ОБНОВИТЕ СТРАНИЦУ",
+    toast_login_to_save: "Войдите, чтобы сохранять прогресс и рейтинг.",
+    auth_guest_enabled: "Режим гостя активирован.",
+    auth_unknown_error: "Неизвестная ошибка авторизации.",
+    auth_rate_limit: "Слишком много попыток. Подождите 1-2 минуты и попробуйте снова.",
+    auth_invalid_email: "Некорректный email. Введите реальный адрес (например, Gmail/Mail).",
+    auth_already_registered: "Этот email уже зарегистрирован. Нажмите «Войти».",
+    auth_email_not_confirmed: "Почта не подтверждена. Проверьте письмо и подтвердите аккаунт.",
+    auth_invalid_credentials: "Неверный email или пароль.",
+    auth_generic_error: "Ошибка авторизации.",
+    auth_signing_up: "Регистрация...",
+    auth_signing_in: "Вход...",
+    auth_signup_done_loggedin: "Аккаунт создан, вход выполнен.",
+    auth_signup_done_confirm: "Аккаунт создан. Подтвердите почту и потом нажмите «Войти».",
+    auth_signin_done: "Вход выполнен.",
+    auth_network_error: "Сетевая ошибка. Проверьте интернет и попробуйте снова.",
+    setup_lock_ranked: "Рейтинг фиксирует настройки: честные условия для лидерборда.",
+    setup_lock_ai: "Можно менять цель матча, темп и сложность ИИ.",
+    setup_lock_pvp: "PvP: сложность ИИ отключена, остальные параметры можно менять.",
+    summary_target: "До {points}",
+    summary_tempo: "Темп x{value}",
+    summary_ai: "ИИ: {level}",
+    summary_mods_default: "Стандартные модификаторы",
+    summary_ranked: "Результат попадет в таблицу лидеров",
+    winner_finished: "Матч завершен",
+    winner_you: "Победа",
+    winner_ai: "Neural Net победил",
+    winner_left: "Победа левого игрока",
+    winner_right: "Победа правого игрока",
+    overlay_match_style: "Матч: {left}-{right} | Стиль: {score}",
+    overlay_match: "Матч: {left}-{right}",
+    mode_ranked_hard: "Рейтинг (Hard)",
+    mode_neural_fallback: "Нейросеть",
+    mode_pvp_fallback: "2 игрока",
+    ai_easy: "Легко",
+    ai_normal: "Нормально",
+    ai_hard: "Сложно",
+    extras_match: "Параметры матча",
+    extras_mods: "Модификаторы",
+    extras_theme: "Тема",
+    extras_sound: "Звук",
+    match_target: "Цель матча",
+    match_ai: "Сложность нейросети",
+    match_tempo: "Темп матча",
+    opt_auto_mode: "Авто (по режиму)",
+    tempo_calm: "Спокойный",
+    tempo_standard: "Стандарт",
+    tempo_fast: "Быстрый",
+    tempo_turbo: "Турбо",
+    mod_fast: "Скоростной мяч",
+    mod_big: "Большой мяч",
+    mod_narrow: "Узкие ракетки",
+    theme_neon: "Неон",
+    theme_ghost: "Гоуст",
+    theme_circuit: "Схема",
+    theme_matrix: "Matrix",
+    theme_ember: "Ember",
+    audio_soft: "Мягкий",
+    audio_arcade: "Аркада",
+    audio_techno: "Техно",
+    hint_ranked: "В рейтинге используется нейросеть на сложности Hard.",
+    sound_toggle: "Звук: {state}",
+    state_on: "Вкл",
+    state_off: "Выкл",
+  },
+  en: {
+    lang_current: "EN",
+    lang_switch_label: "Change language",
+    lang_menu_label: "Language selection",
+    lang_ru: "Русский",
+    lang_en: "English",
+    lang_zh: "中文",
+    auth_not_logged_in: "Not signed in",
+    auth_logged_in: "Signed in: {email}",
+    overlay_prepare: "Let's set up the match step by step.",
+    step_auth: "Login Screen",
+    step_setup: "Main Menu",
+    auth_screen_title: "Login Screen",
+    main_menu_title: "Main Menu",
+    label_email: "Email",
+    label_password: "Password",
+    label_nickname: "Nickname",
+    placeholder_password: "At least 6 characters",
+    placeholder_nickname: "Player",
+    button_signin: "Sign In",
+    button_signup: "Sign Up",
+    button_guest: "Play as Guest",
+    button_start: "Start Match",
+    button_back_auth: "Back to Login",
+    button_logout: "Sign Out",
+    button_pause: "Pause",
+    button_resume: "Resume",
+    button_skip: "Skip",
+    button_open_auth_login: "Sign in",
+    button_open_auth_switch: "Switch account",
+    guest_warn: "Guest mode: progress and scores will not be saved.",
+    guest_banner: "You are playing as guest. Sign in from settings to save results.",
+    session_account: "Account: {email}",
+    session_guest: "Session: guest",
+    session_none: "Session: not signed in",
+    mode_select_prompt: "Choose a mode to continue.",
+    mode_ai_label: "Neural AI",
+    mode_ai_card_title: "Vs AI",
+    mode_ai_desc: "Solo mode with flexible AI and pace settings.",
+    mode_ai_card_desc: "Classic solo match against neural AI",
+    mode_ranked_label: "Ranked",
+    mode_ranked_card_title: "Ranked",
+    mode_ranked_desc: "Tournament mode: Hard AI and leaderboard submission.",
+    mode_ranked_card_desc: "Competitive mode with leaderboard upload",
+    mode_pvp_label: "2 Players",
+    mode_pvp_card_title: "2 Players",
+    mode_pvp_desc: "Local 1v1: A/D vs arrow keys.",
+    mode_pvp_card_desc: "Local duel on one keyboard",
+    mode_blitz_label: "Blitz",
+    mode_blitz_card_title: "Blitz",
+    mode_blitz_desc: "Short aggressive match to 5 points.",
+    mode_blitz_card_desc: "Fast 5-point match with high tempo",
+    mode_training_label: "Training",
+    mode_training_card_title: "Training",
+    mode_training_desc: "Calm mode to warm up and train reactions.",
+    mode_training_card_desc: "Long match with softer AI and bigger ball",
+    mode_arcade_label: "Arcade+",
+    mode_arcade_card_title: "Arcade+",
+    mode_arcade_desc: "PvP with increased pace, race to 11.",
+    mode_arcade_card_desc: "PvP to 11 with denser dynamics",
+    match_panel_title: "Match Status",
+    leaderboard_title: "Leaderboard",
+    tab_week: "This Week",
+    tab_all: "All Time",
+    week_from: "Week from {date}",
+    leaderboard_error: "Load error",
+    leaderboard_empty: "No entries yet",
+    player_default: "Player",
+    hud_mode: "Mode",
+    hud_score: "Score",
+    hud_speed: "Speed",
+    hud_rally: "Rally",
+    hud_rank: "Rank",
+    to_points: "To {points}",
+    metric_latency: "Latency",
+    metric_hash: "Hash Rate",
+    metric_entropy: "Entropy",
+    badge_sync_ok: "SYNC OK",
+    badge_ledger_ready: "LEDGER READY",
+    badge_ledger_locked: "LEDGER LOCKED",
+    badge_tx_idle: "TX IDLE",
+    badge_tx_confirmed: "TX CONFIRMED",
+    terminal_session_idle: "SESSION: IDLE",
+    terminal_mode: "MODE: {mode}",
+    terminal_rank: "RANK: {rank}",
+    terminal_goal_confirmed: "GOAL: CONFIRMED",
+    terminal_combo: "COMBO: {combo}",
+    rank_kernel: "Kernel",
+    rank_root: "Root",
+    rank_node: "Node",
+    rank_cipher: "Cipher",
+    rank_zero: "Zero",
+    control_hint_pvp: "A/D controls left paddle, arrows control right. Space or Pause button.",
+    control_hint_ai: "A/D controls your paddle. Space or Pause button.",
+    ai_badge: "NEURAL AI ACTIVE",
+    launch_sync: "SYNCHRONIZING ARENA...",
+    boot_kicker: "NEURAL ARENA",
+    boot_line_0: "Initializing core...",
+    boot_line_1: "Connecting telemetry...",
+    boot_line_2: "Calibrating arena...",
+    boot_line_3: "Ready to launch.",
+    toast_audio_profile: "AUDIO PROFILE: {name}",
+    toast_tx_confirmed: "TX CONFIRMED",
+    toast_zero_latency: "ZERO LATENCY",
+    toast_perfect_deflect: "PERFECT DEFLECT",
+    toast_rank_up: "Rank up: {rank}",
+    toast_combo: "Combo x{combo}",
+    toast_guest_mode: "GUEST MODE ENABLED",
+    toast_signed_out: "SIGNED OUT",
+    toast_engine_loading: "Engine is still loading",
+    toast_select_mode: "Choose a mode first",
+    toast_ranked_login: "Ranked requires login",
+    toast_setup_error: "Mode configuration error",
+    toast_guest_no_save: "GUEST: PROGRESS IS NOT SAVED",
+    toast_launch_error: "LAUNCH ERROR: REFRESH PAGE",
+    toast_login_to_save: "Sign in to save progress and ranking.",
+    auth_guest_enabled: "Guest mode enabled.",
+    auth_unknown_error: "Unknown authorization error.",
+    auth_rate_limit: "Too many attempts. Wait 1-2 minutes and try again.",
+    auth_invalid_email: "Invalid email. Enter a real address.",
+    auth_already_registered: "This email is already registered. Click “Sign In”.",
+    auth_email_not_confirmed: "Email not confirmed. Check inbox and confirm account.",
+    auth_invalid_credentials: "Invalid email or password.",
+    auth_generic_error: "Authorization error.",
+    auth_signing_up: "Signing up...",
+    auth_signing_in: "Signing in...",
+    auth_signup_done_loggedin: "Account created and signed in.",
+    auth_signup_done_confirm: "Account created. Confirm email, then click “Sign In”.",
+    auth_signin_done: "Signed in successfully.",
+    auth_network_error: "Network error. Check internet and try again.",
+    setup_lock_ranked: "Ranked locks settings for fair leaderboard conditions.",
+    setup_lock_ai: "Target score, tempo, and AI difficulty can be changed.",
+    setup_lock_pvp: "PvP: AI difficulty disabled, other settings are editable.",
+    summary_target: "To {points}",
+    summary_tempo: "Tempo x{value}",
+    summary_ai: "AI: {level}",
+    summary_mods_default: "Standard modifiers",
+    summary_ranked: "Result will be submitted to leaderboard",
+    winner_finished: "Match finished",
+    winner_you: "Victory",
+    winner_ai: "Neural Net won",
+    winner_left: "Left player wins",
+    winner_right: "Right player wins",
+    overlay_match_style: "Match: {left}-{right} | Style: {score}",
+    overlay_match: "Match: {left}-{right}",
+    mode_ranked_hard: "Ranked (Hard)",
+    mode_neural_fallback: "Neural AI",
+    mode_pvp_fallback: "2 Players",
+    ai_easy: "Easy",
+    ai_normal: "Normal",
+    ai_hard: "Hard",
+    extras_match: "Match Settings",
+    extras_mods: "Modifiers",
+    extras_theme: "Theme",
+    extras_sound: "Sound",
+    match_target: "Target score",
+    match_ai: "Neural AI difficulty",
+    match_tempo: "Match tempo",
+    opt_auto_mode: "Auto (by mode)",
+    tempo_calm: "Calm",
+    tempo_standard: "Standard",
+    tempo_fast: "Fast",
+    tempo_turbo: "Turbo",
+    mod_fast: "Fast ball",
+    mod_big: "Big ball",
+    mod_narrow: "Narrow paddles",
+    theme_neon: "Neon",
+    theme_ghost: "Ghost",
+    theme_circuit: "Circuit",
+    theme_matrix: "Matrix",
+    theme_ember: "Ember",
+    audio_soft: "Soft",
+    audio_arcade: "Arcade",
+    audio_techno: "Techno",
+    hint_ranked: "Ranked uses neural AI at Hard difficulty.",
+    sound_toggle: "Sound: {state}",
+    state_on: "On",
+    state_off: "Off",
+  },
+  zh: {
+    lang_current: "中文",
+    lang_switch_label: "切换语言",
+    lang_menu_label: "语言选择",
+    lang_ru: "Русский",
+    lang_en: "English",
+    lang_zh: "中文",
+    auth_not_logged_in: "未登录",
+    auth_logged_in: "已登录: {email}",
+    overlay_prepare: "我们先分步骤设置比赛。",
+    step_auth: "登录界面",
+    step_setup: "主菜单",
+    auth_screen_title: "登录界面",
+    main_menu_title: "主菜单",
+    label_email: "邮箱",
+    label_password: "密码",
+    label_nickname: "昵称",
+    placeholder_password: "至少 6 个字符",
+    placeholder_nickname: "玩家",
+    button_signin: "登录",
+    button_signup: "注册",
+    button_guest: "游客模式",
+    button_start: "开始比赛",
+    button_back_auth: "返回登录",
+    button_logout: "退出登录",
+    button_pause: "暂停",
+    button_resume: "继续",
+    button_skip: "跳过",
+    button_open_auth_login: "登录账号",
+    button_open_auth_switch: "切换账号",
+    guest_warn: "游客模式：成绩和进度不会保存。",
+    guest_banner: "你当前是游客。若要保存成绩，请在设置中登录账号。",
+    session_account: "账号: {email}",
+    session_guest: "会话: 游客",
+    session_none: "会话: 未登录",
+    mode_select_prompt: "请选择一个模式继续。",
+    mode_ai_label: "神经网络",
+    mode_ai_card_title: "对战 AI",
+    mode_ai_desc: "单人模式：可调整 AI 难度与节奏。",
+    mode_ai_card_desc: "基础单人对战神经网络",
+    mode_ranked_label: "排位",
+    mode_ranked_card_title: "排位",
+    mode_ranked_desc: "竞技模式：Hard AI 并上传排行榜。",
+    mode_ranked_card_desc: "高难模式并提交排行榜",
+    mode_pvp_label: "双人对战",
+    mode_pvp_card_title: "双人对战",
+    mode_pvp_desc: "本地 1v1：A/D 对方向键。",
+    mode_pvp_card_desc: "一台键盘本地对战",
+    mode_blitz_label: "闪电战",
+    mode_blitz_card_title: "闪电战",
+    mode_blitz_desc: "快节奏短局，先到 5 分。",
+    mode_blitz_card_desc: "激进节奏，先到 5 分",
+    mode_training_label: "训练",
+    mode_training_card_title: "训练",
+    mode_training_desc: "平稳节奏，用于热身和反应训练。",
+    mode_training_card_desc: "更温和 AI 与更大球体的长局",
+    mode_arcade_label: "街机+",
+    mode_arcade_card_title: "街机+",
+    mode_arcade_desc: "PvP 加速节奏，目标 11 分。",
+    mode_arcade_card_desc: "PvP 到 11 分，节奏更快",
+    match_panel_title: "比赛状态",
+    leaderboard_title: "排行榜",
+    tab_week: "本周",
+    tab_all: "总榜",
+    week_from: "周起始: {date}",
+    leaderboard_error: "加载失败",
+    leaderboard_empty: "暂无记录",
+    player_default: "玩家",
+    hud_mode: "模式",
+    hud_score: "比分",
+    hud_speed: "速度",
+    hud_rally: "回合",
+    hud_rank: "等级",
+    to_points: "到 {points} 分",
+    metric_latency: "延迟",
+    metric_hash: "哈希率",
+    metric_entropy: "熵值",
+    badge_sync_ok: "同步正常",
+    badge_ledger_ready: "账本就绪",
+    badge_ledger_locked: "账本锁定",
+    badge_tx_idle: "等待交易",
+    badge_tx_confirmed: "交易确认",
+    terminal_session_idle: "会话: 空闲",
+    terminal_mode: "模式: {mode}",
+    terminal_rank: "等级: {rank}",
+    terminal_goal_confirmed: "进球: 已确认",
+    terminal_combo: "连击: {combo}",
+    rank_kernel: "Kernel",
+    rank_root: "Root",
+    rank_node: "Node",
+    rank_cipher: "Cipher",
+    rank_zero: "Zero",
+    control_hint_pvp: "A/D 控制左拍，方向键控制右拍。空格或“暂停”按钮。",
+    control_hint_ai: "A/D 控制你的球拍。空格或“暂停”按钮。",
+    ai_badge: "神经网络已激活",
+    launch_sync: "正在同步竞技场...",
+    boot_kicker: "神经竞技场",
+    boot_line_0: "初始化核心中...",
+    boot_line_1: "连接遥测中...",
+    boot_line_2: "校准场地中...",
+    boot_line_3: "准备完成。",
+    toast_audio_profile: "音频配置: {name}",
+    toast_tx_confirmed: "交易确认",
+    toast_zero_latency: "零延迟",
+    toast_perfect_deflect: "完美反弹",
+    toast_rank_up: "等级提升: {rank}",
+    toast_combo: "连击 x{combo}",
+    toast_guest_mode: "已进入游客模式",
+    toast_signed_out: "已退出登录",
+    toast_engine_loading: "引擎仍在加载",
+    toast_select_mode: "请先选择模式",
+    toast_ranked_login: "排位模式需要登录",
+    toast_setup_error: "模式配置错误",
+    toast_guest_no_save: "游客模式：进度不会保存",
+    toast_launch_error: "启动错误：请刷新页面",
+    toast_login_to_save: "登录后可保存进度和排行。",
+    auth_guest_enabled: "游客模式已启用。",
+    auth_unknown_error: "未知授权错误。",
+    auth_rate_limit: "请求过多。请等待 1-2 分钟后重试。",
+    auth_invalid_email: "邮箱无效，请输入真实地址。",
+    auth_already_registered: "该邮箱已注册，请点击“登录”。",
+    auth_email_not_confirmed: "邮箱未验证。请先在邮件中完成验证。",
+    auth_invalid_credentials: "邮箱或密码错误。",
+    auth_generic_error: "授权失败。",
+    auth_signing_up: "注册中...",
+    auth_signing_in: "登录中...",
+    auth_signup_done_loggedin: "账号已创建并登录。",
+    auth_signup_done_confirm: "账号已创建。请先验证邮箱后再登录。",
+    auth_signin_done: "登录成功。",
+    auth_network_error: "网络错误，请检查网络后重试。",
+    setup_lock_ranked: "排位模式锁定参数，确保排行榜公平。",
+    setup_lock_ai: "可修改目标分、节奏和 AI 难度。",
+    setup_lock_pvp: "PvP：AI 难度不可用，其余参数可修改。",
+    summary_target: "到 {points} 分",
+    summary_tempo: "节奏 x{value}",
+    summary_ai: "AI: {level}",
+    summary_mods_default: "标准修饰项",
+    summary_ranked: "结果将写入排行榜",
+    winner_finished: "比赛结束",
+    winner_you: "你赢了",
+    winner_ai: "神经网络获胜",
+    winner_left: "左侧玩家获胜",
+    winner_right: "右侧玩家获胜",
+    overlay_match_style: "比分: {left}-{right} | 风格: {score}",
+    overlay_match: "比分: {left}-{right}",
+    mode_ranked_hard: "排位 (Hard)",
+    mode_neural_fallback: "神经网络",
+    mode_pvp_fallback: "双人对战",
+    ai_easy: "简单",
+    ai_normal: "普通",
+    ai_hard: "困难",
+    extras_match: "比赛参数",
+    extras_mods: "修饰项",
+    extras_theme: "主题",
+    extras_sound: "声音",
+    match_target: "目标分",
+    match_ai: "神经网络难度",
+    match_tempo: "比赛节奏",
+    opt_auto_mode: "自动（按模式）",
+    tempo_calm: "平稳",
+    tempo_standard: "标准",
+    tempo_fast: "快速",
+    tempo_turbo: "涡轮",
+    mod_fast: "高速球",
+    mod_big: "大球",
+    mod_narrow: "窄球拍",
+    theme_neon: "霓虹",
+    theme_ghost: "幽灵",
+    theme_circuit: "电路",
+    theme_matrix: "矩阵",
+    theme_ember: "余烬",
+    audio_soft: "柔和",
+    audio_arcade: "街机",
+    audio_techno: "电子",
+    hint_ranked: "排位模式固定为 Hard 难度神经网络。",
+    sound_toggle: "声音: {state}",
+    state_on: "开",
+    state_off: "关",
+  },
+};
+
+function t(key, params = {}) {
+  const dict = translations[currentLanguage] || translations.ru;
+  const fallback = translations.ru[key] || key;
+  const template = dict[key] || fallback;
+  return template.replace(/\{(\w+)\}/g, (_, token) => String(params[token] ?? ""));
+}
+
+function localeTag() {
+  return localeByLanguage[currentLanguage] || "ru-RU";
+}
+
+function aiLevelLabel(level) {
+  const labels = [t("ai_easy"), t("ai_normal"), t("ai_hard")];
+  return labels[level] || labels[1];
+}
+
+function modeLabel(mode) {
+  const preset = modeCatalog[mode];
+  return preset ? t(preset.labelKey) : t("mode_select_prompt");
+}
+
+function modeDescription(mode) {
+  const preset = modeCatalog[mode];
+  return preset ? t(preset.descKey) : t("mode_select_prompt");
+}
+
+function rankLabelByKey(key) {
+  return t(key);
+}
+
+function setText(el, text) {
+  if (el) el.textContent = text;
+}
+
+function setPlaceholder(el, text) {
+  if (el) el.placeholder = text;
+}
+
 const modeCatalog = {
   ai: {
-    label: "Нейросеть",
-    desc: "Соло-режим: гибкие настройки сложности и темпа.",
+    labelKey: "mode_ai_label",
+    descKey: "mode_ai_desc",
     runtimeMode: 1,
     ranked: false,
     target: 7,
@@ -155,8 +824,8 @@ const modeCatalog = {
     mods: { fast: false, big: false, narrow: false },
   },
   ranked: {
-    label: "Рейтинг",
-    desc: "Турнирный режим: Hard-ИИ и сохранение в лидерборд.",
+    labelKey: "mode_ranked_label",
+    descKey: "mode_ranked_desc",
     runtimeMode: 1,
     ranked: true,
     target: 7,
@@ -166,8 +835,8 @@ const modeCatalog = {
     lockSetup: true,
   },
   pvp: {
-    label: "2 игрока",
-    desc: "Локальный матч 1v1: A/D против стрелок.",
+    labelKey: "mode_pvp_label",
+    descKey: "mode_pvp_desc",
     runtimeMode: 0,
     ranked: false,
     target: 7,
@@ -176,8 +845,8 @@ const modeCatalog = {
     mods: { fast: false, big: false, narrow: false },
   },
   blitz: {
-    label: "Блиц",
-    desc: "Короткий и агрессивный матч до 5 очков.",
+    labelKey: "mode_blitz_label",
+    descKey: "mode_blitz_desc",
     runtimeMode: 1,
     ranked: false,
     target: 5,
@@ -186,8 +855,8 @@ const modeCatalog = {
     mods: { fast: true, big: false, narrow: true },
   },
   training: {
-    label: "Тренировка",
-    desc: "Спокойный режим для разогрева и тренировки реакции.",
+    labelKey: "mode_training_label",
+    descKey: "mode_training_desc",
     runtimeMode: 1,
     ranked: false,
     target: 15,
@@ -196,8 +865,8 @@ const modeCatalog = {
     mods: { fast: false, big: true, narrow: false },
   },
   arcade: {
-    label: "Аркада+",
-    desc: "PvP с повышенным темпом и длинным матчем до 11.",
+    labelKey: "mode_arcade_label",
+    descKey: "mode_arcade_desc",
     runtimeMode: 0,
     ranked: false,
     target: 11,
@@ -241,27 +910,171 @@ function setAuthMessage(text) {
   authMessageEl.textContent = text || "";
 }
 
+function localizeStaticUi() {
+  document.documentElement.lang = currentLanguage;
+  setText(stepPillAuthEl, t("step_auth"));
+  setText(stepPillSetupEl, t("step_setup"));
+  setText(overlayScoreEl, t("overlay_prepare"));
+  setText(authScreenTitleEl, t("auth_screen_title"));
+  setText(mainMenuTitleEl, t("main_menu_title"));
+  setText(labelEmailEl, t("label_email"));
+  setText(labelPasswordEl, t("label_password"));
+  setText(labelNicknameEl, t("label_nickname"));
+  setPlaceholder(obPasswordEl, t("placeholder_password"));
+  setPlaceholder(obNicknameEl, t("placeholder_nickname"));
+  setText(btnSignIn, t("button_signin"));
+  setText(btnSignUp, t("button_signup"));
+  setText(btnGuest, t("button_guest"));
+  setText(btnBackAuth, t("button_back_auth"));
+  setText(btnStartGame, t("button_start"));
+  setText(btnLogout, t("button_logout"));
+  setText(guestWarnEl, t("guest_warn"));
+  setText(guestSessionBannerEl, t("guest_banner"));
+  setText(modeAiTitleEl, t("mode_ai_card_title"));
+  setText(modeAiDescEl, t("mode_ai_card_desc"));
+  setText(modeRankedTitleEl, t("mode_ranked_card_title"));
+  setText(modeRankedDescEl, t("mode_ranked_card_desc"));
+  setText(modePvpTitleEl, t("mode_pvp_card_title"));
+  setText(modePvpDescEl, t("mode_pvp_card_desc"));
+  setText(modeBlitzTitleEl, t("mode_blitz_card_title"));
+  setText(modeBlitzDescEl, t("mode_blitz_card_desc"));
+  setText(modeTrainingTitleEl, t("mode_training_card_title"));
+  setText(modeTrainingDescEl, t("mode_training_card_desc"));
+  setText(modeArcadeTitleEl, t("mode_arcade_card_title"));
+  setText(modeArcadeDescEl, t("mode_arcade_card_desc"));
+  setText(extrasTitleMatchEl, t("extras_match"));
+  setText(extrasTitleModsEl, t("extras_mods"));
+  setText(extrasTitleThemeEl, t("extras_theme"));
+  setText(extrasTitleSoundEl, t("extras_sound"));
+  setText(labelMatchTargetEl, t("match_target"));
+  setText(labelMatchAiLevelEl, t("match_ai"));
+  setText(labelMatchTempoEl, t("match_tempo"));
+  setText(modFastLabelEl, t("mod_fast"));
+  setText(modBigLabelEl, t("mod_big"));
+  setText(modNarrowLabelEl, t("mod_narrow"));
+  setText(themeNeonEl, t("theme_neon"));
+  setText(themeGhostEl, t("theme_ghost"));
+  setText(themeCircuitEl, t("theme_circuit"));
+  setText(themeMatrixEl, t("theme_matrix"));
+  setText(themeEmberEl, t("theme_ember"));
+  setText(audioOptSoftEl, t("audio_soft"));
+  setText(audioOptArcadeEl, t("audio_arcade"));
+  setText(audioOptTechnoEl, t("audio_techno"));
+  setText(optTargetAutoEl, t("opt_auto_mode"));
+  setText(optTarget5El, t("to_points", { points: 5 }));
+  setText(optTarget7El, t("to_points", { points: 7 }));
+  setText(optTarget11El, t("to_points", { points: 11 }));
+  setText(optTarget15El, t("to_points", { points: 15 }));
+  setText(optAiAutoEl, t("opt_auto_mode"));
+  setText(optAi0El, t("ai_easy"));
+  setText(optAi1El, t("ai_normal"));
+  setText(optAi2El, t("ai_hard"));
+  setText(optTempoAutoEl, t("opt_auto_mode"));
+  setText(optTempo09El, t("tempo_calm"));
+  setText(optTempo10El, t("tempo_standard"));
+  setText(optTempo11El, t("tempo_fast"));
+  setText(optTempo118El, t("tempo_turbo"));
+  setText(hintRankedEl, t("hint_ranked"));
+  setText(leaderboardTitleEl, t("leaderboard_title"));
+  setText(tabWeek, t("tab_week"));
+  setText(tabAll, t("tab_all"));
+  setText(matchPanelTitleEl, t("match_panel_title"));
+  setText(hudLabelModeEl, t("hud_mode"));
+  setText(hudLabelScoreEl, t("hud_score"));
+  setText(hudLabelSpeedEl, t("hud_speed"));
+  setText(hudLabelRallyEl, t("hud_rally"));
+  setText(hudLabelRankEl, t("hud_rank"));
+  setText(metricLabelLatencyEl, t("metric_latency"));
+  setText(metricLabelHashEl, t("metric_hash"));
+  setText(metricLabelEntropyEl, t("metric_entropy"));
+  setText(aiBadgeEl, t("ai_badge"));
+  setText(launchTextEl, t("launch_sync"));
+  setText(bootKickerEl, t("boot_kicker"));
+  setText(bootLineEl, t("boot_line_0"));
+  setText(bootSkipEl, t("button_skip"));
+  setText(touchPause, t("button_pause"));
+}
+
+function updateLanguageMenuUi() {
+  if (!langTriggerEl || !langCurrentEl || !langMenuEl) return;
+  langCurrentEl.textContent = t("lang_current");
+  langTriggerEl.setAttribute("aria-label", t("lang_switch_label"));
+  langTriggerEl.setAttribute("aria-expanded", langMenuEl.classList.contains("hidden") ? "false" : "true");
+  langMenuEl.setAttribute("aria-label", t("lang_menu_label"));
+  for (const option of langOptionEls) {
+    const code = option.dataset.lang;
+    option.classList.toggle("active", code === currentLanguage);
+    if (code === "ru") option.textContent = t("lang_ru");
+    if (code === "en") option.textContent = t("lang_en");
+    if (code === "zh") option.textContent = t("lang_zh");
+  }
+}
+
+function retranslateRuntimeUi() {
+  if (currentUser) {
+    setStatus(t("auth_logged_in", { email: currentUser.email }));
+  } else {
+    setStatus(t("auth_not_logged_in"));
+  }
+
+  if (!overlayEl.classList.contains("hidden") && overlayTitleEl.textContent === "Pong") {
+    setText(overlayScoreEl, t("overlay_prepare"));
+  }
+
+  soundToggleEl.textContent = t("sound_toggle", {
+    state: audioEnabled ? t("state_on") : t("state_off"),
+  });
+  setText(pauseToggleEl, paused ? t("button_resume") : t("button_pause"));
+  updateSessionPanel();
+  updateRankedAvailability();
+  updateSetupAvailability();
+  updateModeSummary();
+  updateControlHint();
+  hudTargetEl.textContent = t("to_points", { points: currentTargetPoints });
+  if (currentMode !== null) {
+    updateModeHud(currentMode);
+  } else {
+    hudModeEl.textContent = modeLabel("pvp");
+    if (mobileModeEl) mobileModeEl.textContent = modeLabel("pvp");
+  }
+  hudScoreEl.textContent = `${lastLeftPoints} - ${lastRightPoints}`;
+  if (mobileScoreEl) mobileScoreEl.textContent = `${lastLeftPoints} - ${lastRightPoints}`;
+  hudRankEl.textContent = lastRank || rankLabelByKey("rank_kernel");
+}
+
+function applyLanguage(lang, persist = true) {
+  if (!supportedLanguages.includes(lang)) return;
+  currentLanguage = lang;
+  if (persist) {
+    window.localStorage.setItem(languageKey, lang);
+  }
+  localizeStaticUi();
+  updateLanguageMenuUi();
+  retranslateRuntimeUi();
+  loadLeaderboard();
+}
+
 function formatAuthError(error) {
-  if (!error) return "Неизвестная ошибка авторизации.";
+  if (!error) return t("auth_unknown_error");
   const code = (error.error_code || "").toLowerCase();
   const msg = (error.message || "").toLowerCase();
 
   if (code === "over_email_send_rate_limit" || msg.includes("rate limit")) {
-    return "Слишком много попыток. Подождите 1-2 минуты и попробуйте снова.";
+    return t("auth_rate_limit");
   }
   if (code === "email_address_invalid" || msg.includes("invalid email")) {
-    return "Некорректный email. Введите реальный адрес (например, Gmail/Mail).";
+    return t("auth_invalid_email");
   }
   if (msg.includes("user already registered")) {
-    return "Этот email уже зарегистрирован. Нажмите «Войти».";
+    return t("auth_already_registered");
   }
   if (msg.includes("email not confirmed")) {
-    return "Почта не подтверждена. Проверьте письмо и подтвердите аккаунт.";
+    return t("auth_email_not_confirmed");
   }
   if (msg.includes("invalid login credentials")) {
-    return "Неверный email или пароль.";
+    return t("auth_invalid_credentials");
   }
-  return error.message || "Ошибка авторизации.";
+  return error.message || t("auth_generic_error");
 }
 
 function setAuthBusy(busy) {
@@ -285,23 +1098,23 @@ function isGuestSession() {
 function updateSessionPanel() {
   if (!sessionLineEl || !guestSessionBannerEl || !btnOpenAuth || !btnLogout) return;
   if (currentUser) {
-    sessionLineEl.textContent = `Аккаунт: ${currentUser.email}`;
+    sessionLineEl.textContent = t("session_account", { email: currentUser.email });
     guestSessionBannerEl.classList.add("hidden");
     btnLogout.classList.remove("hidden");
-    btnOpenAuth.textContent = "Сменить аккаунт";
+    btnOpenAuth.textContent = t("button_open_auth_switch");
     return;
   }
   if (isGuestSession()) {
-    sessionLineEl.textContent = "Сессия: гость";
+    sessionLineEl.textContent = t("session_guest");
     guestSessionBannerEl.classList.remove("hidden");
     btnLogout.classList.add("hidden");
-    btnOpenAuth.textContent = "Войти в аккаунт";
+    btnOpenAuth.textContent = t("button_open_auth_login");
     return;
   }
-  sessionLineEl.textContent = "Сессия: без входа";
+  sessionLineEl.textContent = t("session_none");
   guestSessionBannerEl.classList.add("hidden");
   btnLogout.classList.add("hidden");
-  btnOpenAuth.textContent = "Войти в аккаунт";
+  btnOpenAuth.textContent = t("button_open_auth_login");
 }
 
 function enterGuestSession(showToast = true) {
@@ -309,8 +1122,8 @@ function enterGuestSession(showToast = true) {
   window.localStorage.setItem(guestSessionKey, "1");
   guestWarnEl.classList.add("active");
   if (showToast) {
-    setAuthMessage("Режим гостя активирован.");
-    spawnToast("ВЫ ВОШЛИ КАК ГОСТЬ", true);
+    setAuthMessage(t("auth_guest_enabled"));
+    spawnToast(t("toast_guest_mode"), true);
   }
   setStep("setup");
   updateSessionPanel();
@@ -330,8 +1143,8 @@ function playLaunchTransition() {
 }
 
 function describeMode(mode) {
-  if (!mode || !modeCatalog[mode]) return "Выберите режим, чтобы продолжить.";
-  return modeCatalog[mode].desc;
+  if (!mode || !modeCatalog[mode]) return t("mode_select_prompt");
+  return modeDescription(mode);
 }
 
 function clampNumber(v, lo, hi, fallback) {
@@ -380,7 +1193,7 @@ function updateSetupAvailability(mode = selectedMode) {
     if (modBigEl) modBigEl.checked = !!preset.mods.big;
     if (modNarrowEl) modNarrowEl.checked = !!preset.mods.narrow;
     if (setupLockNoteEl) {
-      setupLockNoteEl.textContent = "Рейтинг фиксирует настройки: честные условия для лидерборда.";
+      setupLockNoteEl.textContent = t("setup_lock_ranked");
     }
     return;
   }
@@ -391,8 +1204,8 @@ function updateSetupAvailability(mode = selectedMode) {
 
   if (setupLockNoteEl) {
     setupLockNoteEl.textContent = aiRelevant
-      ? "Можно менять цель матча, темп и сложность ИИ."
-      : "PvP: сложность ИИ отключена, остальные параметры можно менять.";
+      ? t("setup_lock_ai")
+      : t("setup_lock_pvp");
   }
 }
 
@@ -423,7 +1236,7 @@ function resolveModeSetup(mode = selectedMode) {
 
   return {
     id: mode,
-    label: preset.label,
+    label: modeLabel(mode),
     ranked: preset.ranked,
     runtimeMode: preset.runtimeMode,
     targetPoints,
@@ -440,35 +1253,37 @@ function updateModeSummary(mode = selectedMode) {
     modeSummaryEl.textContent = describeMode(mode);
     return;
   }
-  const aiLabels = ["Легко", "Нормально", "Сложно"];
-  const parts = [`До ${setup.targetPoints}`, `Темп x${setup.speedScale.toFixed(2)}`];
+  const parts = [
+    t("summary_target", { points: setup.targetPoints }),
+    t("summary_tempo", { value: setup.speedScale.toFixed(2) }),
+  ];
   if (setup.runtimeMode === 1) {
-    parts.push(`ИИ: ${aiLabels[setup.aiLevel] || aiLabels[1]}`);
+    parts.push(t("summary_ai", { level: aiLevelLabel(setup.aiLevel) }));
   }
   const modNames = [];
-  if (setup.mods.fast) modNames.push("Скоростной мяч");
-  if (setup.mods.big) modNames.push("Большой мяч");
-  if (setup.mods.narrow) modNames.push("Узкие ракетки");
-  parts.push(modNames.length ? modNames.join(", ") : "Стандартные модификаторы");
+  if (setup.mods.fast) modNames.push(t("mod_fast"));
+  if (setup.mods.big) modNames.push(t("mod_big"));
+  if (setup.mods.narrow) modNames.push(t("mod_narrow"));
+  parts.push(modNames.length ? modNames.join(", ") : t("summary_mods_default"));
   if (setup.ranked) {
-    parts.push("Результат попадет в таблицу лидеров");
+    parts.push(t("summary_ranked"));
   }
   modeSummaryEl.textContent = `${describeMode(mode)} ${parts.join(" • ")}`;
 }
 
 function updatePauseButton() {
   if (!pauseToggleEl) return;
-  pauseToggleEl.textContent = paused ? "Продолжить" : "Пауза";
+  pauseToggleEl.textContent = paused ? t("button_resume") : t("button_pause");
   pauseToggleEl.classList.toggle("active", paused);
 }
 
 function updateControlHint() {
   if (!controlHintEl) return;
   if (currentMode === 0) {
-    controlHintEl.textContent = "A/D — левая ракетка, стрелки — правая. Пробел или кнопка «Пауза».";
+    controlHintEl.textContent = t("control_hint_pvp");
     return;
   }
-  controlHintEl.textContent = "A/D — управление игрока. Пробел или кнопка «Пауза».";
+  controlHintEl.textContent = t("control_hint_ai");
 }
 
 function applyPerformanceProfile() {
@@ -644,10 +1459,10 @@ function playBootSequence() {
   bootSequenceEl.classList.remove("hidden");
 
   const lines = [
-    "Инициализация ядра...",
-    "Подключение телеметрии...",
-    "Калибровка арены...",
-    "Готово к запуску.",
+    t("boot_line_0"),
+    t("boot_line_1"),
+    t("boot_line_2"),
+    t("boot_line_3"),
   ];
   const start = performance.now();
   const durationMs = 2700;
@@ -707,7 +1522,7 @@ function showOverlayForOnboarding() {
     canvasEl.blur();
   }
   overlayTitleEl.textContent = "Pong";
-  overlayScoreEl.textContent = "Подготовим игру по шагам.";
+  overlayScoreEl.textContent = t("overlay_prepare");
   seasonSummaryEl.classList.remove("active");
   seasonSummaryEl.innerHTML = "";
   if (currentUser) {
@@ -737,7 +1552,7 @@ function hideOverlay() {
 
 function updateRankedAvailability() {
   btnModeRanked.disabled = !currentUser;
-  btnModeRanked.title = currentUser ? "" : "Для Ranked нужен вход";
+  btnModeRanked.title = currentUser ? "" : t("toast_ranked_login");
   if (!currentUser && selectedMode === "ranked") {
     selectedMode = null;
     for (const card of modeCardEls) {
@@ -753,7 +1568,7 @@ function selectMode(mode, options = {}) {
   if (!modeCatalog[mode]) return;
   const preserveSetup = !!options.preserveSetup;
   if (mode === "ranked" && !currentUser) {
-    spawnToast("Для Ranked нужен вход", true);
+    spawnToast(t("toast_ranked_login"), true);
     setStep("auth");
     return;
   }
@@ -783,7 +1598,8 @@ function weekStartISO(date) {
 function formatWeekLabel(weekStart) {
   const [y, m, d] = weekStart.split("-").map(Number);
   const date = new Date(Date.UTC(y, m - 1, d));
-  return `Неделя с ${date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
+  const shortDate = date.toLocaleDateString(localeTag(), { month: "short", day: "numeric" });
+  return t("week_from", { date: shortDate });
 }
 
 async function refreshUser() {
@@ -792,10 +1608,10 @@ async function refreshUser() {
   if (currentUser) {
     authChoice = "signed";
     window.localStorage.removeItem(guestSessionKey);
-    setStatus(`Вход: ${currentUser.email}`);
+    setStatus(t("auth_logged_in", { email: currentUser.email }));
   } else {
     authChoice = isGuestSession() ? "guest" : null;
-    setStatus("Не выполнен вход");
+    setStatus(t("auth_not_logged_in"));
   }
   updateRankedAvailability();
   updateSessionPanel();
@@ -804,7 +1620,7 @@ async function refreshUser() {
 async function signUp() {
   setAuthBusy(true);
   try {
-    setAuthMessage("Регистрация...");
+    setAuthMessage(t("auth_signing_up"));
     const { error } = await supa.auth.signUp({
       email: obEmailEl.value.trim(),
       password: obPasswordEl.value.trim(),
@@ -816,15 +1632,15 @@ async function signUp() {
 
     await refreshUser();
     if (currentUser) {
-      setAuthMessage("Аккаунт создан, вход выполнен.");
+      setAuthMessage(t("auth_signup_done_loggedin"));
       guestWarnEl.classList.remove("active");
       setStep("setup");
       await loadLeaderboard();
     } else {
-      setAuthMessage("Аккаунт создан. Подтвердите почту и потом нажмите «Войти».");
+      setAuthMessage(t("auth_signup_done_confirm"));
     }
   } catch (_) {
-    setAuthMessage("Сетевая ошибка. Проверьте интернет и попробуйте снова.");
+    setAuthMessage(t("auth_network_error"));
   } finally {
     setAuthBusy(false);
   }
@@ -833,7 +1649,7 @@ async function signUp() {
 async function signIn() {
   setAuthBusy(true);
   try {
-    setAuthMessage("Вход...");
+    setAuthMessage(t("auth_signing_in"));
     const { error } = await supa.auth.signInWithPassword({
       email: obEmailEl.value.trim(),
       password: obPasswordEl.value.trim(),
@@ -843,12 +1659,12 @@ async function signIn() {
       return;
     }
     await refreshUser();
-    setAuthMessage("Вход выполнен.");
+    setAuthMessage(t("auth_signin_done"));
     guestWarnEl.classList.remove("active");
     setStep("setup");
     await loadLeaderboard();
   } catch (_) {
-    setAuthMessage("Сетевая ошибка. Проверьте интернет и попробуйте снова.");
+    setAuthMessage(t("auth_network_error"));
   } finally {
     setAuthBusy(false);
   }
@@ -934,7 +1750,8 @@ function setAudioProfile(name) {
   if (ambientNode) {
     ambientNode.frequency.value = audioProfiles[currentAudioProfile].ambientFreq;
   }
-  spawnToast(`AUDIO: ${name.toUpperCase()}`);
+  const audioNameKey = `audio_${name}`;
+  spawnToast(t("toast_audio_profile", { name: t(audioNameKey).toUpperCase() }));
 }
 
 function loadAudioProfile() {
@@ -1059,11 +1876,11 @@ function updateMetrics(speed) {
 }
 
 function rankForRally(r) {
-  if (r >= 18) return "Zero";
-  if (r >= 14) return "Cipher";
-  if (r >= 10) return "Node";
-  if (r >= 6) return "Root";
-  return "Kernel";
+  if (r >= 18) return rankLabelByKey("rank_zero");
+  if (r >= 14) return rankLabelByKey("rank_cipher");
+  if (r >= 10) return rankLabelByKey("rank_node");
+  if (r >= 6) return rankLabelByKey("rank_root");
+  return rankLabelByKey("rank_kernel");
 }
 
 function updateRallyHud(rally) {
@@ -1072,34 +1889,33 @@ function updateRallyHud(rally) {
   if (nextRank !== lastRank) {
     lastRank = nextRank;
     hudRankEl.textContent = nextRank;
-    spawnToast(`Rank Up: ${nextRank}`, currentMode === 1);
-    writeTerminal(`RANK: ${nextRank}`);
+    spawnToast(t("toast_rank_up", { rank: nextRank }), currentMode === 1);
+    writeTerminal(t("terminal_rank", { rank: nextRank }));
   } else {
     hudRankEl.textContent = nextRank;
   }
 }
 
 function updateModeHud(mode) {
-  const labels = ["Легко", "Нормально", "Сложно"];
   const preset = modeCatalog[selectedMode] || null;
-  let modeText = preset ? preset.label : (mode === 1 ? "Нейросеть" : "2 игрока");
+  let modeText = preset ? modeLabel(selectedMode) : (mode === 1 ? t("mode_neural_fallback") : t("mode_pvp_fallback"));
   if (mode === 1) {
     if (isRanked) {
-      modeText = "Рейтинг (Hard)";
-      writeTerminal("MODE: RANKED");
-      flashBadge(badgeLedgerEl, "LEDGER LOCKED");
+      modeText = t("mode_ranked_hard");
+      writeTerminal(t("terminal_mode", { mode: t("mode_ranked_label").toUpperCase() }));
+      flashBadge(badgeLedgerEl, t("badge_ledger_locked"));
     } else {
-      modeText = `${modeText} (${labels[currentAiLevel] || labels[1]})`;
-      writeTerminal(`MODE: ${(preset ? preset.label : "NEURAL").toUpperCase()}`);
-      flashBadge(badgeLedgerEl, "LEDGER READY");
+      modeText = `${modeText} (${aiLevelLabel(currentAiLevel)})`;
+      writeTerminal(t("terminal_mode", { mode: modeText.toUpperCase() }));
+      flashBadge(badgeLedgerEl, t("badge_ledger_ready"));
     }
   } else {
-    writeTerminal(`MODE: ${(preset ? preset.label : "PVP").toUpperCase()}`);
-    flashBadge(badgeLedgerEl, "LEDGER READY");
+    writeTerminal(t("terminal_mode", { mode: modeText.toUpperCase() }));
+    flashBadge(badgeLedgerEl, t("badge_ledger_ready"));
   }
   hudModeEl.textContent = modeText;
   if (mobileModeEl) mobileModeEl.textContent = modeText;
-  hudTargetEl.textContent = `До ${currentTargetPoints}`;
+  hudTargetEl.textContent = t("to_points", { points: currentTargetPoints });
   updateControlHint();
 }
 
@@ -1112,9 +1928,9 @@ function updateScoreHud(left, right) {
       document.body.classList.add("glitch");
     }
     triggerGoalShock();
-    spawnToast("TX CONFIRMED", currentMode === 1);
-    writeTerminal("GOAL: CONFIRMED");
-    flashBadge(badgeTxEl, "TX CONFIRMED");
+    spawnToast(t("toast_tx_confirmed"), currentMode === 1);
+    writeTerminal(t("terminal_goal_confirmed"));
+    flashBadge(badgeTxEl, t("badge_tx_confirmed"));
     goalThump();
     if (!lowFxMode) {
       setTimeout(() => document.body.classList.remove("glitch"), 140);
@@ -1125,9 +1941,9 @@ function updateScoreHud(left, right) {
 }
 
 function winnerTitle() {
-  if (lastWinner === null) return "Матч завершен";
-  if (currentMode === 1) return lastWinner === 0 ? "Победа" : "Neural Net победил";
-  return lastWinner === 0 ? "Победа левого игрока" : "Победа правого игрока";
+  if (lastWinner === null) return t("winner_finished");
+  if (currentMode === 1) return lastWinner === 0 ? t("winner_you") : t("winner_ai");
+  return lastWinner === 0 ? t("winner_left") : t("winner_right");
 }
 
 async function loadLeaderboard() {
@@ -1147,17 +1963,17 @@ async function loadLeaderboard() {
 
   const { data, error } = await query;
   if (error || !data) {
-    leaderboardEl.innerHTML = "<li>Ошибка загрузки</li>";
+    leaderboardEl.innerHTML = `<li>${t("leaderboard_error")}</li>`;
     return;
   }
   if (data.length === 0) {
-    leaderboardEl.innerHTML = "<li>Пока пусто</li>";
+    leaderboardEl.innerHTML = `<li>${t("leaderboard_empty")}</li>`;
     return;
   }
   leaderboardEl.innerHTML = "";
   for (const row of data) {
     const li = document.createElement("li");
-    li.textContent = `${row.player_name || "Игрок"} - ${row.score}`;
+    li.textContent = `${row.player_name || t("player_default")} - ${row.score}`;
     leaderboardEl.appendChild(li);
   }
 }
@@ -1248,21 +2064,21 @@ function bindTouchButton(el, onPress, onRelease) {
 
 async function startSelectedGame() {
   if (!runtimeReady) {
-    spawnToast("Движок еще загружается", true);
+    spawnToast(t("toast_engine_loading"), true);
     return;
   }
   if (!selectedMode) {
-    spawnToast("Сначала выберите режим", true);
+    spawnToast(t("toast_select_mode"), true);
     return;
   }
   if (selectedMode === "ranked" && !currentUser) {
-    spawnToast("Для Ranked нужен вход", true);
+    spawnToast(t("toast_ranked_login"), true);
     setStep("auth");
     return;
   }
   const setup = resolveModeSetup(selectedMode);
   if (!setup) {
-    spawnToast("Ошибка конфигурации режима", true);
+    spawnToast(t("toast_setup_error"), true);
     return;
   }
   try {
@@ -1293,7 +2109,7 @@ async function startSelectedGame() {
     setAmbientTarget(ambientBase() + (isRanked ? 0.004 : 0));
     updateModeHud(currentMode);
     if (isGuestSession()) {
-      spawnToast("ГОСТЬ: ПРОГРЕСС НЕ СОХРАНЯЕТСЯ", true);
+      spawnToast(t("toast_guest_no_save"), true);
     }
     await playLaunchTransition();
     hideOverlay();
@@ -1302,7 +2118,7 @@ async function startSelectedGame() {
     }
   } catch (error) {
     console.error("startSelectedGame failed", error);
-    spawnToast("ОШИБКА ЗАПУСКА: ОБНОВИТЕ СТРАНИЦУ", true);
+    spawnToast(t("toast_launch_error"), true);
   }
 }
 
@@ -1323,8 +2139,8 @@ function wireModuleCallbacks() {
     setStep("setup");
     overlayTitleEl.textContent = winnerTitle();
     overlayScoreEl.textContent = currentMode === 1
-      ? `Матч: ${lastLeftPoints}-${lastRightPoints} | Стиль: ${score}`
-      : `Матч: ${lastLeftPoints}-${lastRightPoints}`;
+      ? t("overlay_match_style", { left: lastLeftPoints, right: lastRightPoints, score })
+      : t("overlay_match", { left: lastLeftPoints, right: lastRightPoints });
 
     if (currentMode === 1 && isRanked) {
       submitScore(score);
@@ -1335,16 +2151,16 @@ function wireModuleCallbacks() {
 
   const onBallSpeed = (speed) => {
     updateSpeedHud(speed);
-    if (speed > 520) spawnAchievement("ZERO LATENCY");
+    if (speed > 520) spawnAchievement(t("toast_zero_latency"));
   };
 
   const onCombo = (combo) => {
     updateRallyHud(combo);
     if (combo > 0 && combo % 5 === 0) {
-      spawnToast(`Combo x${combo}`, currentMode === 1);
-      writeTerminal(`COMBO: ${combo}`);
+      spawnToast(t("toast_combo", { combo }), currentMode === 1);
+      writeTerminal(t("terminal_combo", { combo }));
     }
-    if (combo >= 12) spawnAchievement("PERFECT DEFLECT");
+    if (combo >= 12) spawnAchievement(t("toast_perfect_deflect"));
     if (combo > 0) blip();
   };
 
@@ -1352,7 +2168,7 @@ function wireModuleCallbacks() {
   const onPoints = (left, right) => updateScoreHud(left, right);
   const onTarget = (target) => {
     currentTargetPoints = target;
-    hudTargetEl.textContent = `До ${target}`;
+    hudTargetEl.textContent = t("to_points", { points: target });
   };
   const onAiLevel = (level) => { currentAiLevel = level; updateModeHud(1); };
   const onWinner = (winner) => { lastWinner = winner; };
@@ -1386,7 +2202,7 @@ function initEvents() {
   if (btnOpenAuth) {
     btnOpenAuth.addEventListener("click", () => {
       setStep("auth");
-      setAuthMessage("Войдите, чтобы сохранять прогресс и рейтинг.");
+      setAuthMessage(t("toast_login_to_save"));
     });
   }
   if (btnLogout) {
@@ -1394,11 +2210,11 @@ function initEvents() {
       await supa.auth.signOut();
       currentUser = null;
       authChoice = null;
-      setStatus("Не выполнен вход");
+      setStatus(t("auth_not_logged_in"));
       setStep("auth");
       updateRankedAvailability();
       updateSessionPanel();
-      spawnToast("ВЫХОД ВЫПОЛНЕН", true);
+      spawnToast(t("toast_signed_out"), true);
     });
   }
   btnStartGame.addEventListener("click", startSelectedGame);
@@ -1429,7 +2245,9 @@ function initEvents() {
 
   soundToggleEl.addEventListener("click", () => {
     audioEnabled = !audioEnabled;
-    soundToggleEl.textContent = `Звук: ${audioEnabled ? "Вкл" : "Выкл"}`;
+    soundToggleEl.textContent = t("sound_toggle", {
+      state: audioEnabled ? t("state_on") : t("state_off"),
+    });
     soundToggleEl.classList.toggle("off", !audioEnabled);
     if (!audioEnabled && ambientGain) {
       ambientGain.gain.value = 0;
@@ -1460,6 +2278,28 @@ function initEvents() {
     updateLeaderboardTabIndicator();
     loadLeaderboard();
   });
+
+  if (langTriggerEl && langMenuEl) {
+    langTriggerEl.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const isHidden = langMenuEl.classList.contains("hidden");
+      langMenuEl.classList.toggle("hidden", !isHidden);
+      langTriggerEl.setAttribute("aria-expanded", isHidden ? "true" : "false");
+    });
+    for (const option of langOptionEls) {
+      option.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const lang = option.dataset.lang;
+        applyLanguage(lang, true);
+        langMenuEl.classList.add("hidden");
+        langTriggerEl.setAttribute("aria-expanded", "false");
+      });
+    }
+    document.addEventListener("click", () => {
+      langMenuEl.classList.add("hidden");
+      langTriggerEl.setAttribute("aria-expanded", "false");
+    });
+  }
 
   document.addEventListener("keydown", (event) => {
     if (isTypingInField()) return;
@@ -1509,6 +2349,7 @@ function initEvents() {
 
 async function init() {
   initEvents();
+  applyLanguage(currentLanguage, false);
   wireModuleCallbacks();
   loadSetupOptions();
   loadTheme();
@@ -1517,22 +2358,24 @@ async function init() {
   await loadLeaderboard();
   updateLeaderboardTabIndicator();
 
-  hudModeEl.textContent = "2 игрока";
+  hudModeEl.textContent = modeLabel("pvp");
   hudScoreEl.textContent = "0 - 0";
-  hudTargetEl.textContent = `До ${currentTargetPoints}`;
+  hudTargetEl.textContent = t("to_points", { points: currentTargetPoints });
   hudSpeedEl.textContent = "0";
   hudRallyEl.textContent = "0";
-  hudRankEl.textContent = "Kernel";
-  badgeSyncEl.textContent = "SYNC OK";
-  badgeLedgerEl.textContent = "LEDGER READY";
-  badgeTxEl.textContent = "TX IDLE";
-  soundToggleEl.textContent = `Звук: ${audioEnabled ? "Вкл" : "Выкл"}`;
+  lastRank = rankLabelByKey("rank_kernel");
+  hudRankEl.textContent = lastRank;
+  badgeSyncEl.textContent = t("badge_sync_ok");
+  badgeLedgerEl.textContent = t("badge_ledger_ready");
+  badgeTxEl.textContent = t("badge_tx_idle");
+  soundToggleEl.textContent = t("sound_toggle", { state: audioEnabled ? t("state_on") : t("state_off") });
   btnStartGame.disabled = !selectedMode;
   updateSetupAvailability();
   updateModeSummary();
   updatePauseButton();
   updateControlHint();
-  if (mobileModeEl) mobileModeEl.textContent = "2 игрока";
+  writeTerminal(t("terminal_session_idle"));
+  if (mobileModeEl) mobileModeEl.textContent = modeLabel("pvp");
   if (mobileScoreEl) mobileScoreEl.textContent = "0 - 0";
 
   if (!selectedMode) {
