@@ -104,6 +104,14 @@ const tabRating = document.getElementById("tab-rating");
 const leaderboardTabsEl = document.querySelector(".leaderboard-tabs");
 const weekLabelEl = document.getElementById("week-label");
 const leaderboardEl = document.getElementById("leaderboard");
+const profileTitleEl = document.getElementById("profile-title");
+const profileSummaryEl = document.getElementById("profile-summary");
+const streakLineEl = document.getElementById("streak-line");
+const badgeGridEl = document.getElementById("badge-grid");
+const dailyTitleEl = document.getElementById("daily-title");
+const dailyListEl = document.getElementById("daily-list");
+const historyTitleEl = document.getElementById("history-title");
+const historyListEl = document.getElementById("history-list");
 const particleFieldEl = document.getElementById("particle-field");
 const bootSequenceEl = document.getElementById("boot-sequence");
 const bootLineEl = document.getElementById("boot-line");
@@ -181,6 +189,7 @@ let lastRank = "";
 let currentAiLevel = 1;
 let lastAchievementAt = 0;
 let currentTargetPoints = 7;
+let matchMaxCombo = 0;
 
 let inputLeftUp = false;
 let inputLeftDown = false;
@@ -308,6 +317,44 @@ const translations = {
     leaderboard_ranked_missing: "Таблица рейтинга не настроена в Supabase",
     player_default: "Игрок",
     leaderboard_rating_row: "{name} • {rating} ELO • W{wins}/L{losses}",
+    profile_title: "Профиль игрока",
+    daily_title: "Ежедневные челленджи",
+    history_title: "История матчей",
+    profile_guest: "Войдите, чтобы видеть прогресс.",
+    profile_rating_line: "Рейтинг: {rating} ELO ({division})",
+    profile_record_line: "Матчи: {games} • Победы: {wins} • Поражения: {losses}",
+    profile_streak_line: "Серия побед: {current} • Рекорд: {best}",
+    daily_guest: "Войдите, чтобы получать ежедневные задания.",
+    daily_done: "Выполнено",
+    daily_progress: "{value}/{target}",
+    history_guest: "Войдите, чтобы видеть историю матчей.",
+    history_empty: "Пока нет матчей.",
+    history_row: "{mode} • {score} • {result}{rating} • {time}",
+    history_result_win: "Победа",
+    history_result_loss: "Поражение",
+    history_result_left: "Победа левого",
+    history_result_right: "Победа правого",
+    challenge_play3_title: "Сыграть 3 матча",
+    challenge_play3_desc: "Любые режимы за сегодня",
+    challenge_win2_title: "Победить 2 раза",
+    challenge_win2_desc: "Победы против нейросети",
+    challenge_combo10_title: "Сделать серию 10+",
+    challenge_combo10_desc: "Макс. серия отбиваний за день",
+    badge_first_win_name: "First Blood",
+    badge_first_win_desc: "Первая победа против нейросети",
+    badge_streak_3_name: "Heat x3",
+    badge_streak_3_desc: "Серия из 3 побед",
+    badge_streak_7_name: "Dominance x7",
+    badge_streak_7_desc: "Серия из 7 побед",
+    badge_combo_20_name: "Combo Master",
+    badge_combo_20_desc: "Серия 20+ за матч",
+    badge_rating_1200_name: "ELO 1200",
+    badge_rating_1200_desc: "Дойти до Silver дивизиона",
+    badge_rating_1400_name: "ELO 1400",
+    badge_rating_1400_desc: "Дойти до Platinum дивизиона",
+    badge_daily_hero_name: "Daily Hero",
+    badge_daily_hero_desc: "Закрыть все ежедневные задания",
+    toast_badge_unlocked: "НОВЫЙ БЕЙДЖ: {badge}",
     hud_mode: "Режим",
     hud_score: "Счет",
     hud_speed: "Скорость",
@@ -496,6 +543,44 @@ const translations = {
     leaderboard_ranked_missing: "Rating table is not configured in Supabase",
     player_default: "Player",
     leaderboard_rating_row: "{name} • {rating} ELO • W{wins}/L{losses}",
+    profile_title: "Player Profile",
+    daily_title: "Daily Challenges",
+    history_title: "Match History",
+    profile_guest: "Sign in to see your progress.",
+    profile_rating_line: "Rating: {rating} ELO ({division})",
+    profile_record_line: "Matches: {games} • Wins: {wins} • Losses: {losses}",
+    profile_streak_line: "Win streak: {current} • Best: {best}",
+    daily_guest: "Sign in to unlock daily challenges.",
+    daily_done: "Completed",
+    daily_progress: "{value}/{target}",
+    history_guest: "Sign in to view match history.",
+    history_empty: "No matches yet.",
+    history_row: "{mode} • {score} • {result}{rating} • {time}",
+    history_result_win: "Win",
+    history_result_loss: "Loss",
+    history_result_left: "Left wins",
+    history_result_right: "Right wins",
+    challenge_play3_title: "Play 3 matches",
+    challenge_play3_desc: "Any mode, today",
+    challenge_win2_title: "Win 2 matches",
+    challenge_win2_desc: "Wins vs neural AI",
+    challenge_combo10_title: "Reach combo 10+",
+    challenge_combo10_desc: "Daily max rally",
+    badge_first_win_name: "First Blood",
+    badge_first_win_desc: "First victory vs neural AI",
+    badge_streak_3_name: "Heat x3",
+    badge_streak_3_desc: "3-win streak",
+    badge_streak_7_name: "Dominance x7",
+    badge_streak_7_desc: "7-win streak",
+    badge_combo_20_name: "Combo Master",
+    badge_combo_20_desc: "Reach 20+ combo in one match",
+    badge_rating_1200_name: "ELO 1200",
+    badge_rating_1200_desc: "Reach Silver division",
+    badge_rating_1400_name: "ELO 1400",
+    badge_rating_1400_desc: "Reach Platinum division",
+    badge_daily_hero_name: "Daily Hero",
+    badge_daily_hero_desc: "Complete all daily challenges",
+    toast_badge_unlocked: "NEW BADGE: {badge}",
     hud_mode: "Mode",
     hud_score: "Score",
     hud_speed: "Speed",
@@ -684,6 +769,44 @@ const translations = {
     leaderboard_ranked_missing: "Supabase 中未配置评级表",
     player_default: "玩家",
     leaderboard_rating_row: "{name} • {rating} ELO • 胜{wins}/负{losses}",
+    profile_title: "玩家资料",
+    daily_title: "每日挑战",
+    history_title: "对局历史",
+    profile_guest: "登录后可查看你的进度。",
+    profile_rating_line: "评级: {rating} ELO（{division}）",
+    profile_record_line: "对局: {games} • 胜: {wins} • 负: {losses}",
+    profile_streak_line: "连胜: {current} • 最佳: {best}",
+    daily_guest: "登录后可解锁每日挑战。",
+    daily_done: "已完成",
+    daily_progress: "{value}/{target}",
+    history_guest: "登录后可查看历史记录。",
+    history_empty: "还没有对局记录。",
+    history_row: "{mode} • {score} • {result}{rating} • {time}",
+    history_result_win: "胜利",
+    history_result_loss: "失败",
+    history_result_left: "左侧获胜",
+    history_result_right: "右侧获胜",
+    challenge_play3_title: "完成 3 场比赛",
+    challenge_play3_desc: "今天任意模式",
+    challenge_win2_title: "赢下 2 场",
+    challenge_win2_desc: "对战神经 AI 胜利",
+    challenge_combo10_title: "达成 10+ 连击",
+    challenge_combo10_desc: "当天最大回合数",
+    badge_first_win_name: "First Blood",
+    badge_first_win_desc: "首次击败神经 AI",
+    badge_streak_3_name: "Heat x3",
+    badge_streak_3_desc: "达成 3 连胜",
+    badge_streak_7_name: "Dominance x7",
+    badge_streak_7_desc: "达成 7 连胜",
+    badge_combo_20_name: "Combo Master",
+    badge_combo_20_desc: "单局达成 20+ 连击",
+    badge_rating_1200_name: "ELO 1200",
+    badge_rating_1200_desc: "达到白银段位",
+    badge_rating_1400_name: "ELO 1400",
+    badge_rating_1400_desc: "达到白金段位",
+    badge_daily_hero_name: "Daily Hero",
+    badge_daily_hero_desc: "完成全部每日挑战",
+    toast_badge_unlocked: "新徽章: {badge}",
     hud_mode: "模式",
     hud_score: "比分",
     hud_speed: "速度",
@@ -914,6 +1037,22 @@ const modeButtons = {
   arcade: btnModeArcade,
 };
 
+const dailyChallengeDefs = [
+  { id: "play3", key: "daily_matches", target: 3, titleKey: "challenge_play3_title", descKey: "challenge_play3_desc" },
+  { id: "win2", key: "daily_wins", target: 2, titleKey: "challenge_win2_title", descKey: "challenge_win2_desc" },
+  { id: "combo10", key: "daily_best_combo", target: 10, titleKey: "challenge_combo10_title", descKey: "challenge_combo10_desc" },
+];
+
+const badgeDefs = [
+  { id: "first_win", nameKey: "badge_first_win_name", descKey: "badge_first_win_desc" },
+  { id: "streak_3", nameKey: "badge_streak_3_name", descKey: "badge_streak_3_desc" },
+  { id: "streak_7", nameKey: "badge_streak_7_name", descKey: "badge_streak_7_desc" },
+  { id: "combo_20", nameKey: "badge_combo_20_name", descKey: "badge_combo_20_desc" },
+  { id: "rating_1200", nameKey: "badge_rating_1200_name", descKey: "badge_rating_1200_desc" },
+  { id: "rating_1400", nameKey: "badge_rating_1400_name", descKey: "badge_rating_1400_desc" },
+  { id: "daily_hero", nameKey: "badge_daily_hero_name", descKey: "badge_daily_hero_desc" },
+];
+
 function ccall(name, returnType = null, types = [], args = []) {
   if (!window.Module || !Module.ccall) return false;
   try {
@@ -1009,6 +1148,9 @@ function localizeStaticUi() {
   setText(tabAll, t("tab_all"));
   setText(tabRating, t("tab_rating"));
   setText(matchPanelTitleEl, t("match_panel_title"));
+  setText(profileTitleEl, t("profile_title"));
+  setText(dailyTitleEl, t("daily_title"));
+  setText(historyTitleEl, t("history_title"));
   setText(hudLabelModeEl, t("hud_mode"));
   setText(hudLabelScoreEl, t("hud_score"));
   setText(hudLabelSpeedEl, t("hud_speed"));
@@ -1070,6 +1212,7 @@ function retranslateRuntimeUi() {
   hudScoreEl.textContent = `${lastLeftPoints} - ${lastRightPoints}`;
   if (mobileScoreEl) mobileScoreEl.textContent = `${lastLeftPoints} - ${lastRightPoints}`;
   hudRankEl.textContent = lastRank || rankLabelByKey("rank_kernel");
+  void loadProgressPanels();
 }
 
 function applyLanguage(lang, persist = true) {
@@ -1673,7 +1816,7 @@ function computeRatingDelta(currentRating, didWin, aiLevel, styleScore) {
 }
 
 async function submitRankedRating(styleScore) {
-  if (!currentUser) return false;
+  if (!currentUser) return null;
   const playerName = obNicknameEl.value.trim() || currentUser.email.split("@")[0];
   const didWin = lastWinner === 0;
 
@@ -1685,11 +1828,11 @@ async function submitRankedRating(styleScore) {
 
   if (error && !isMissingTableError(error)) {
     console.error("ranked_stats query failed", error);
-    return false;
+    return null;
   }
   if (error && isMissingTableError(error)) {
     spawnToast(t("leaderboard_ranked_missing"), true);
-    return false;
+    return null;
   }
 
   const currentRating = existing?.rating ?? ratingBase;
@@ -1727,7 +1870,7 @@ async function submitRankedRating(styleScore) {
 
   if (writeError) {
     console.error("ranked_stats write failed", writeError);
-    return false;
+    return null;
   }
 
   spawnToast(t("toast_rating_delta", {
@@ -1739,7 +1882,370 @@ async function submitRankedRating(styleScore) {
     await loadLeaderboard();
   }
 
-  return true;
+  return {
+    delta,
+    rating: nextRating,
+    wins: nextWins,
+    losses: nextLosses,
+    games: nextGames,
+  };
+}
+
+function todayIsoDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function defaultProgress() {
+  return {
+    user_id: currentUser?.id || null,
+    total_wins: 0,
+    total_losses: 0,
+    current_streak: 0,
+    best_streak: 0,
+    max_combo_ever: 0,
+    badges: [],
+    daily_date: todayIsoDate(),
+    daily_matches: 0,
+    daily_wins: 0,
+    daily_best_combo: 0,
+  };
+}
+
+function normalizeBadges(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((v) => typeof v === "string");
+}
+
+async function fetchRatingStats() {
+  if (!currentUser) return null;
+  const { data, error } = await supa
+    .from("ranked_stats")
+    .select("rating,games_played,wins,losses,best_style")
+    .eq("user_id", currentUser.id)
+    .maybeSingle();
+  if (error) {
+    if (!isMissingTableError(error)) {
+      console.error("fetchRatingStats failed", error);
+    }
+    return null;
+  }
+  return data || null;
+}
+
+function evaluateNewBadges(progress, ratingValue) {
+  const unlocked = new Set(normalizeBadges(progress.badges));
+  const toAdd = [];
+  const add = (id) => {
+    if (unlocked.has(id)) return;
+    unlocked.add(id);
+    toAdd.push(id);
+  };
+
+  if ((progress.total_wins || 0) >= 1) add("first_win");
+  if ((progress.best_streak || 0) >= 3) add("streak_3");
+  if ((progress.best_streak || 0) >= 7) add("streak_7");
+  if ((progress.max_combo_ever || 0) >= 20) add("combo_20");
+  if ((ratingValue || 0) >= 1200) add("rating_1200");
+  if ((ratingValue || 0) >= 1400) add("rating_1400");
+  if ((progress.daily_matches || 0) >= 3 && (progress.daily_wins || 0) >= 2 && (progress.daily_best_combo || 0) >= 10) {
+    add("daily_hero");
+  }
+
+  return toAdd;
+}
+
+function badgeNameById(id) {
+  const def = badgeDefs.find((b) => b.id === id);
+  return def ? t(def.nameKey) : id;
+}
+
+function renderBadges(unlockedBadges) {
+  if (!badgeGridEl) return;
+  const unlocked = new Set(normalizeBadges(unlockedBadges));
+  badgeGridEl.innerHTML = "";
+  for (const def of badgeDefs) {
+    const item = document.createElement("div");
+    const isUnlocked = unlocked.has(def.id);
+    item.className = `badge-item ${isUnlocked ? "unlocked" : "locked"}`;
+    const name = document.createElement("span");
+    name.className = "badge-name";
+    name.textContent = t(def.nameKey);
+    const desc = document.createElement("span");
+    desc.className = "badge-desc";
+    desc.textContent = t(def.descKey);
+    item.appendChild(name);
+    item.appendChild(desc);
+    badgeGridEl.appendChild(item);
+  }
+}
+
+function renderDailyChallenges(progress) {
+  if (!dailyListEl) return;
+  dailyListEl.innerHTML = "";
+  for (const challenge of dailyChallengeDefs) {
+    const value = Math.min(challenge.target, Number(progress[challenge.key] || 0));
+    const done = value >= challenge.target;
+    const li = document.createElement("li");
+    li.className = `daily-item${done ? " done" : ""}`;
+
+    const title = document.createElement("div");
+    title.className = "daily-title";
+    title.textContent = t(challenge.titleKey);
+
+    const desc = document.createElement("div");
+    desc.className = "daily-progress-text";
+    desc.textContent = `${t(challenge.descKey)} • ${t("daily_progress", { value, target: challenge.target })}${done ? ` • ${t("daily_done")}` : ""}`;
+
+    const bar = document.createElement("div");
+    bar.className = "daily-bar";
+    const barFill = document.createElement("div");
+    barFill.className = "daily-bar-fill";
+    barFill.style.width = `${Math.round((value / challenge.target) * 100)}%`;
+    bar.appendChild(barFill);
+
+    li.appendChild(title);
+    li.appendChild(desc);
+    li.appendChild(bar);
+    dailyListEl.appendChild(li);
+  }
+}
+
+function historyResultLabel(result) {
+  if (result === "win") return t("history_result_win");
+  if (result === "loss") return t("history_result_loss");
+  if (result === "left") return t("history_result_left");
+  if (result === "right") return t("history_result_right");
+  return result || "-";
+}
+
+function historyModeLabel(modeId) {
+  if (modeCatalog[modeId]) return modeLabel(modeId);
+  return modeId || t("mode_select_prompt");
+}
+
+function formatHistoryTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleString(localeTag(), {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+async function loadMatchHistory() {
+  if (!historyListEl) return;
+  if (!currentUser) {
+    historyListEl.innerHTML = `<li>${t("history_guest")}</li>`;
+    return;
+  }
+  const { data, error } = await supa
+    .from("match_history")
+    .select("mode_id,left_points,right_points,result,rating_delta,created_at")
+    .eq("user_id", currentUser.id)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (error) {
+    if (!isMissingTableError(error)) {
+      console.error("match_history query failed", error);
+    }
+    historyListEl.innerHTML = `<li>${t("leaderboard_error")}</li>`;
+    return;
+  }
+  if (!data || data.length === 0) {
+    historyListEl.innerHTML = `<li>${t("history_empty")}</li>`;
+    return;
+  }
+  historyListEl.innerHTML = "";
+  for (const row of data) {
+    const li = document.createElement("li");
+    const ratingPart = row.rating_delta ? ` • ${formatSignedNumber(Number(row.rating_delta))} ELO` : "";
+    li.textContent = t("history_row", {
+      mode: historyModeLabel(row.mode_id),
+      score: `${row.left_points}-${row.right_points}`,
+      result: historyResultLabel(row.result),
+      rating: ratingPart,
+      time: formatHistoryTime(row.created_at),
+    });
+    historyListEl.appendChild(li);
+  }
+}
+
+async function loadProgressPanels() {
+  if (!profileSummaryEl || !streakLineEl || !badgeGridEl || !dailyListEl) return;
+  if (!currentUser) {
+    profileSummaryEl.textContent = t("profile_guest");
+    streakLineEl.textContent = "";
+    renderBadges([]);
+    dailyListEl.innerHTML = `<li>${t("daily_guest")}</li>`;
+    await loadMatchHistory();
+    return;
+  }
+
+  const [{ data: rawProgress, error: progressError }, ratingStats] = await Promise.all([
+    supa.from("player_progress")
+      .select("id,total_wins,total_losses,current_streak,best_streak,max_combo_ever,badges,daily_date,daily_matches,daily_wins,daily_best_combo")
+      .eq("user_id", currentUser.id)
+      .maybeSingle(),
+    fetchRatingStats(),
+  ]);
+
+  if (progressError && !isMissingTableError(progressError)) {
+    console.error("player_progress query failed", progressError);
+  }
+
+  const progress = rawProgress || defaultProgress();
+  progress.badges = normalizeBadges(progress.badges);
+  if (progress.daily_date !== todayIsoDate()) {
+    progress.daily_matches = 0;
+    progress.daily_wins = 0;
+    progress.daily_best_combo = 0;
+  }
+
+  const ratingValue = ratingStats?.rating || ratingBase;
+  const games = progress.total_wins + progress.total_losses;
+
+  profileSummaryEl.textContent = `${t("profile_rating_line", {
+    rating: ratingValue,
+    division: ratingDivisionName(ratingValue),
+  })}\n${t("profile_record_line", {
+    games,
+    wins: progress.total_wins,
+    losses: progress.total_losses,
+  })}`;
+
+  streakLineEl.textContent = t("profile_streak_line", {
+    current: progress.current_streak,
+    best: progress.best_streak,
+  });
+
+  renderBadges(progress.badges);
+  renderDailyChallenges(progress);
+  await loadMatchHistory();
+}
+
+async function recordMatchHistory(styleScore, ratingInfo = null) {
+  if (!currentUser) return;
+  const modeId = selectedMode || (currentMode === 1 ? "ai" : "pvp");
+  let result = "left";
+  if (currentMode === 1) {
+    result = lastWinner === 0 ? "win" : "loss";
+  } else {
+    result = lastWinner === 0 ? "left" : "right";
+  }
+
+  const payload = {
+    user_id: currentUser.id,
+    mode_id: modeId,
+    left_points: lastLeftPoints,
+    right_points: lastRightPoints,
+    style_score: styleScore,
+    result,
+    rating_delta: ratingInfo?.delta || 0,
+    rating_after: ratingInfo?.rating || null,
+    rally_peak: matchMaxCombo,
+  };
+  const { error } = await supa.from("match_history").insert(payload);
+  if (error && !isMissingTableError(error)) {
+    console.error("match_history insert failed", error);
+  }
+}
+
+async function updatePlayerProgress(styleScore, ratingInfo = null) {
+  if (!currentUser) return;
+  const today = todayIsoDate();
+  const { data: existing, error } = await supa
+    .from("player_progress")
+    .select("id,total_wins,total_losses,current_streak,best_streak,max_combo_ever,badges,daily_date,daily_matches,daily_wins,daily_best_combo")
+    .eq("user_id", currentUser.id)
+    .maybeSingle();
+
+  if (error) {
+    if (!isMissingTableError(error)) {
+      console.error("player_progress query failed", error);
+    }
+    return;
+  }
+
+  const progress = existing || defaultProgress();
+  let totalWins = Number(progress.total_wins || 0);
+  let totalLosses = Number(progress.total_losses || 0);
+  let currentStreak = Number(progress.current_streak || 0);
+  let bestStreak = Number(progress.best_streak || 0);
+  let maxComboEver = Number(progress.max_combo_ever || 0);
+  let dailyMatches = progress.daily_date === today ? Number(progress.daily_matches || 0) : 0;
+  let dailyWins = progress.daily_date === today ? Number(progress.daily_wins || 0) : 0;
+  let dailyBestCombo = progress.daily_date === today ? Number(progress.daily_best_combo || 0) : 0;
+  let badges = normalizeBadges(progress.badges);
+
+  const aiMatch = currentMode === 1;
+  const didWin = aiMatch && lastWinner === 0;
+  const didLose = aiMatch && lastWinner === 1;
+
+  if (didWin) {
+    totalWins += 1;
+    currentStreak += 1;
+    bestStreak = Math.max(bestStreak, currentStreak);
+  } else if (didLose) {
+    totalLosses += 1;
+    currentStreak = 0;
+  }
+
+  dailyMatches += 1;
+  if (didWin) dailyWins += 1;
+  dailyBestCombo = Math.max(dailyBestCombo, matchMaxCombo);
+  maxComboEver = Math.max(maxComboEver, matchMaxCombo);
+
+  const ratingValue = ratingInfo?.rating ?? (await fetchRatingStats())?.rating ?? ratingBase;
+  const nextProgress = {
+    user_id: currentUser.id,
+    total_wins: totalWins,
+    total_losses: totalLosses,
+    current_streak: currentStreak,
+    best_streak: bestStreak,
+    max_combo_ever: maxComboEver,
+    badges,
+    daily_date: today,
+    daily_matches: dailyMatches,
+    daily_wins: dailyWins,
+    daily_best_combo: dailyBestCombo,
+    updated_at: new Date().toISOString(),
+  };
+
+  const newBadgeIds = evaluateNewBadges(nextProgress, ratingValue);
+  if (newBadgeIds.length) {
+    badges = [...new Set([...badges, ...newBadgeIds])];
+    nextProgress.badges = badges;
+    for (const badgeId of newBadgeIds) {
+      spawnToast(t("toast_badge_unlocked", { badge: badgeNameById(badgeId) }), true);
+    }
+  }
+
+  let writeError = null;
+  if (existing?.id) {
+    const { error: e } = await supa.from("player_progress").update(nextProgress).eq("id", existing.id);
+    writeError = e;
+  } else {
+    const { error: e } = await supa.from("player_progress").insert(nextProgress);
+    writeError = e;
+  }
+
+  if (writeError && !isMissingTableError(writeError)) {
+    console.error("player_progress write failed", writeError);
+  }
+}
+
+async function persistPostMatch(styleScore) {
+  if (!currentUser) return;
+  let ratingInfo = null;
+  if (currentMode === 1 && isRanked) {
+    await submitScore(styleScore);
+    ratingInfo = await submitRankedRating(styleScore);
+  }
+  await recordMatchHistory(styleScore, ratingInfo);
+  await updatePlayerProgress(styleScore, ratingInfo);
+  await loadProgressPanels();
 }
 
 async function refreshUser() {
@@ -1755,6 +2261,7 @@ async function refreshUser() {
   }
   updateRankedAvailability();
   updateSessionPanel();
+  await loadProgressPanels();
 }
 
 async function signUp() {
@@ -2258,6 +2765,7 @@ async function startSelectedGame() {
     ensureMainStarted();
     setSpeedEnergy(0);
     paused = false;
+    matchMaxCombo = 0;
     updatePauseButton();
 
     currentMode = setup.runtimeMode;
@@ -2312,10 +2820,7 @@ function wireModuleCallbacks() {
       ? t("overlay_match_style", { left: lastLeftPoints, right: lastRightPoints, score })
       : t("overlay_match", { left: lastLeftPoints, right: lastRightPoints });
 
-    if (currentMode === 1 && isRanked) {
-      submitScore(score);
-      submitRankedRating(score);
-    }
+    void persistPostMatch(score);
 
     setAmbientTarget(0.003);
   };
@@ -2326,6 +2831,7 @@ function wireModuleCallbacks() {
   };
 
   const onCombo = (combo) => {
+    if (combo > matchMaxCombo) matchMaxCombo = combo;
     updateRallyHud(combo);
     if (combo > 0 && combo % 5 === 0) {
       spawnToast(t("toast_combo", { combo }), currentMode === 1);

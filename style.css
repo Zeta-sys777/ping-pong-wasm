@@ -1016,6 +1016,117 @@ body.goal-shock .mobile-matchbar {
   text-transform: uppercase;
 }
 
+.profile-summary {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+.streak-line {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.badge-grid {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.badge-item {
+  border: 1px solid rgba(61, 255, 182, 0.2);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: rgba(8, 14, 20, 0.65);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.badge-item.unlocked {
+  border-color: rgba(61, 255, 182, 0.48);
+  background: linear-gradient(120deg, rgba(61, 255, 182, 0.18), rgba(32, 184, 255, 0.12));
+  box-shadow: 0 0 16px rgba(61, 255, 182, 0.18);
+}
+
+.badge-item.locked {
+  opacity: 0.58;
+}
+
+.badge-name {
+  display: block;
+  font-size: 12px;
+  color: var(--text);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.badge-desc {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.daily-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.daily-item {
+  border: 1px solid rgba(61, 255, 182, 0.2);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: rgba(8, 14, 20, 0.62);
+}
+
+.daily-item.done {
+  border-color: rgba(61, 255, 182, 0.46);
+  box-shadow: 0 0 14px rgba(61, 255, 182, 0.18);
+}
+
+.daily-title {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.daily-progress-text {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.daily-bar {
+  margin-top: 6px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(61, 255, 182, 0.12);
+  overflow: hidden;
+}
+
+.daily-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, rgba(61, 255, 182, 0.65), rgba(32, 184, 255, 0.82));
+}
+
+.history-list {
+  max-height: 280px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.history-list li {
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.4;
+}
+
 .card .badge {
   display: inline-block;
   padding: 4px 10px;
