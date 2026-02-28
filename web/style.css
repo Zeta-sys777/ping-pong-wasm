@@ -433,6 +433,11 @@ body.mode-arcade #canvas-holder {
   box-shadow: 0 0 22px rgba(255, 158, 77, 0.22), 0 20px 60px rgba(0, 0, 0, 0.56);
 }
 
+body.mode-bet #canvas-holder {
+  border-color: rgba(255, 194, 111, 0.46);
+  box-shadow: 0 0 24px rgba(255, 166, 73, 0.26), 0 0 18px rgba(61, 255, 182, 0.2), 0 20px 60px rgba(0, 0, 0, 0.56);
+}
+
 .cyber-grid {
   position: absolute;
   inset: 0;
@@ -513,6 +518,13 @@ body.mode-arcade .arena-mode-fx {
     radial-gradient(circle at 18% 68%, rgba(255, 217, 94, 0.24), transparent 44%),
     radial-gradient(circle at 82% 32%, rgba(77, 181, 255, 0.2), transparent 46%),
     repeating-linear-gradient(90deg, rgba(255, 217, 94, 0.08) 0, rgba(255, 217, 94, 0.08) 1px, transparent 1px, transparent 24px);
+}
+
+body.mode-bet .arena-mode-fx {
+  background:
+    radial-gradient(circle at 20% 68%, rgba(255, 179, 71, 0.24), transparent 44%),
+    radial-gradient(circle at 80% 30%, rgba(61, 255, 182, 0.22), transparent 44%),
+    repeating-linear-gradient(120deg, rgba(255, 179, 71, 0.08) 0, rgba(255, 179, 71, 0.08) 1px, transparent 1px, transparent 24px);
 }
 
 .frame-corners {
@@ -862,6 +874,10 @@ body.goal-shock .mobile-matchbar {
   background: linear-gradient(145deg, rgba(255, 217, 94, 0.34), rgba(77, 181, 255, 0.22), rgba(9, 16, 24, 0.9));
 }
 
+.mode-card.mode-active[data-mode="bet"] {
+  background: linear-gradient(145deg, rgba(255, 179, 71, 0.4), rgba(61, 255, 182, 0.24), rgba(9, 16, 24, 0.9));
+}
+
 .toast-layer {
   position: fixed;
   inset: 0;
@@ -1173,6 +1189,10 @@ body.goal-shock .mobile-matchbar {
 
 .field.compact {
   margin-bottom: 6px;
+}
+
+.is-hidden {
+  display: none !important;
 }
 
 label {
@@ -1763,6 +1783,14 @@ body.ai-mode #canvas-holder::before {
 .setup-lock-note {
   min-height: 14px;
   color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+#bet-note {
+  min-height: 14px;
+  color: rgba(255, 199, 121, 0.86);
   font-size: 11px;
   letter-spacing: 0.05em;
   text-transform: uppercase;

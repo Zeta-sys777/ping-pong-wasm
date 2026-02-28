@@ -46,6 +46,8 @@ const modeTrainingTitleEl = document.getElementById("mode-training-title");
 const modeTrainingDescEl = document.getElementById("mode-training-desc");
 const modeArcadeTitleEl = document.getElementById("mode-arcade-title");
 const modeArcadeDescEl = document.getElementById("mode-arcade-desc");
+const modeBetTitleEl = document.getElementById("mode-bet-title");
+const modeBetDescEl = document.getElementById("mode-bet-desc");
 const extrasTitleMatchEl = document.getElementById("extras-title-match");
 const extrasTitleModsEl = document.getElementById("extras-title-mods");
 const extrasTitleThemeEl = document.getElementById("extras-title-theme");
@@ -53,12 +55,15 @@ const extrasTitleSoundEl = document.getElementById("extras-title-sound");
 const labelMatchTargetEl = document.getElementById("label-match-target");
 const labelMatchAiLevelEl = document.getElementById("label-match-ai-level");
 const labelMatchTempoEl = document.getElementById("label-match-tempo");
+const labelMatchBetEl = document.getElementById("label-match-bet");
 const modFastLabelEl = document.getElementById("mod-fast-label");
 const modBigLabelEl = document.getElementById("mod-big-label");
 const modNarrowLabelEl = document.getElementById("mod-narrow-label");
 const hintRankedEl = document.getElementById("hint-ranked");
 const launchTextEl = document.getElementById("launch-text");
 const bootKickerEl = document.getElementById("boot-kicker");
+const betNoteEl = document.getElementById("bet-note");
+const betFieldEl = document.getElementById("bet-field");
 
 const optTargetAutoEl = document.getElementById("opt-target-auto");
 const optTarget5El = document.getElementById("opt-target-5");
@@ -74,6 +79,10 @@ const optTempo09El = document.getElementById("opt-tempo-09");
 const optTempo10El = document.getElementById("opt-tempo-10");
 const optTempo11El = document.getElementById("opt-tempo-11");
 const optTempo118El = document.getElementById("opt-tempo-118");
+const optBet25El = document.getElementById("opt-bet-25");
+const optBet50El = document.getElementById("opt-bet-50");
+const optBet100El = document.getElementById("opt-bet-100");
+const optBet200El = document.getElementById("opt-bet-200");
 const audioOptSoftEl = document.getElementById("audio-opt-soft");
 const audioOptArcadeEl = document.getElementById("audio-opt-arcade");
 const audioOptTechnoEl = document.getElementById("audio-opt-techno");
@@ -96,6 +105,7 @@ const btnModePvp = document.getElementById("btn-mode-pvp");
 const btnModeBlitz = document.getElementById("btn-mode-blitz");
 const btnModeTraining = document.getElementById("btn-mode-training");
 const btnModeArcade = document.getElementById("btn-mode-arcade");
+const btnModeBet = document.getElementById("btn-mode-bet");
 const modeCardEls = Array.from(document.querySelectorAll(".mode-card"));
 
 const tabWeek = document.getElementById("tab-week");
@@ -149,6 +159,7 @@ const modNarrowEl = document.getElementById("mod-narrow");
 const matchTargetEl = document.getElementById("match-target");
 const matchAiLevelEl = document.getElementById("match-ai-level");
 const matchTempoEl = document.getElementById("match-tempo");
+const matchBetEl = document.getElementById("match-bet");
 const setupLockNoteEl = document.getElementById("setup-lock-note");
 const themeNeonEl = document.getElementById("theme-neon");
 const themeGhostEl = document.getElementById("theme-ghost");
@@ -176,6 +187,7 @@ const langOptionEls = Array.from(document.querySelectorAll(".lang-option"));
 let currentUser = null;
 let authChoice = null;
 let selectedMode = null;
+let activeModeId = null;
 let currentMode = null;
 let isRanked = false;
 let runtimeReady = false;
@@ -190,6 +202,8 @@ let currentAiLevel = 1;
 let lastAchievementAt = 0;
 let currentTargetPoints = 7;
 let matchMaxCombo = 0;
+let activeBetStake = 0;
+let currentBetBalance = 500;
 
 let inputLeftUp = false;
 let inputLeftDown = false;
@@ -214,6 +228,8 @@ const guestSessionKey = "pong_guest_mode";
 const languageKey = "pong_language";
 const ratingBase = 1000;
 const supportedLanguages = ["ru", "en", "zh"];
+const defaultBetBalance = 500;
+const validBetStakes = new Set(["25", "50", "100", "200"]);
 
 function normalizeLanguageCode(raw) {
   if (!raw) return null;
@@ -306,6 +322,10 @@ const translations = {
     mode_arcade_card_title: "Аркада+",
     mode_arcade_desc: "PvP с повышенным темпом и длинным матчем до 11.",
     mode_arcade_card_desc: "PvP до 11, темп выше и плотная динамика",
+    mode_bet_label: "Bet Mode",
+    mode_bet_card_title: "Bet Mode",
+    mode_bet_desc: "Ставка токенов на исход матча против Hard ИИ.",
+    mode_bet_card_desc: "Ставка токенов на исход матча против Hard ИИ",
     match_panel_title: "Статус матча",
     leaderboard_title: "Таблица лидеров",
     tab_week: "Эта неделя",
@@ -323,13 +343,15 @@ const translations = {
     profile_guest: "Войдите, чтобы видеть прогресс.",
     profile_rating_line: "Рейтинг: {rating} ELO ({division})",
     profile_record_line: "Матчи: {games} • Победы: {wins} • Поражения: {losses}",
+    profile_balance_line: "Баланс: {balance} TOK",
     profile_streak_line: "Серия побед: {current} • Рекорд: {best}",
     daily_guest: "Войдите, чтобы получать ежедневные задания.",
     daily_done: "Выполнено",
     daily_progress: "{value}/{target}",
     history_guest: "Войдите, чтобы видеть историю матчей.",
     history_empty: "Пока нет матчей.",
-    history_row: "{mode} • {score} • {result}{rating} • {time}",
+    history_row: "{mode} • {score} • {result}{rating}{bet} • {time}",
+    history_bet_delta: " • Ставка {delta} TOK",
     history_result_win: "Победа",
     history_result_loss: "Поражение",
     history_result_left: "Победа левого",
@@ -397,9 +419,11 @@ const translations = {
     toast_guest_mode: "ВЫ ВОШЛИ КАК ГОСТЬ",
     toast_signed_out: "ВЫХОД ВЫПОЛНЕН",
     toast_rating_delta: "РЕЙТИНГ {delta} • {rating}",
+    toast_bet_result: "BET {delta} TOK • БАЛАНС {balance}",
     toast_engine_loading: "Движок еще загружается",
     toast_select_mode: "Сначала выберите режим",
     toast_ranked_login: "Для Ranked нужен вход",
+    toast_bet_login: "Для Bet Mode нужен вход",
     toast_setup_error: "Ошибка конфигурации режима",
     toast_guest_no_save: "ГОСТЬ: ПРОГРЕСС НЕ СОХРАНЯЕТСЯ",
     toast_launch_error: "ОШИБКА ЗАПУСКА: ОБНОВИТЕ СТРАНИЦУ",
@@ -419,11 +443,13 @@ const translations = {
     auth_signin_done: "Вход выполнен.",
     auth_network_error: "Сетевая ошибка. Проверьте интернет и попробуйте снова.",
     setup_lock_ranked: "Рейтинг фиксирует настройки: честные условия для лидерборда.",
+    setup_lock_bet: "Bet Mode фиксирует параметры матча: Hard ИИ и ставку токенов.",
     setup_lock_ai: "Можно менять цель матча, темп и сложность ИИ.",
     setup_lock_pvp: "PvP: сложность ИИ отключена, остальные параметры можно менять.",
     summary_target: "До {points}",
     summary_tempo: "Темп x{value}",
     summary_ai: "ИИ: {level}",
+    summary_bet: "Ставка: {stake} TOK",
     summary_mods_default: "Стандартные модификаторы",
     summary_ranked: "Результат попадет в таблицу лидеров",
     winner_finished: "Матч завершен",
@@ -446,6 +472,9 @@ const translations = {
     match_target: "Цель матча",
     match_ai: "Сложность нейросети",
     match_tempo: "Темп матча",
+    match_bet: "Ставка",
+    bet_note: "Выиграй матч и получи +{win} TOK. Проигрыш: {lose} TOK.",
+    toast_bet_insufficient: "Недостаточно TOK для ставки",
     opt_auto_mode: "Авто (по режиму)",
     tempo_calm: "Спокойный",
     tempo_standard: "Стандарт",
@@ -532,6 +561,10 @@ const translations = {
     mode_arcade_card_title: "Arcade+",
     mode_arcade_desc: "PvP with increased pace, race to 11.",
     mode_arcade_card_desc: "PvP to 11 with denser dynamics",
+    mode_bet_label: "Bet Mode",
+    mode_bet_card_title: "Bet Mode",
+    mode_bet_desc: "Wager tokens on a Hard AI match result.",
+    mode_bet_card_desc: "Wager tokens on a Hard AI match result",
     match_panel_title: "Match Status",
     leaderboard_title: "Leaderboard",
     tab_week: "This Week",
@@ -549,13 +582,15 @@ const translations = {
     profile_guest: "Sign in to see your progress.",
     profile_rating_line: "Rating: {rating} ELO ({division})",
     profile_record_line: "Matches: {games} • Wins: {wins} • Losses: {losses}",
+    profile_balance_line: "Balance: {balance} TOK",
     profile_streak_line: "Win streak: {current} • Best: {best}",
     daily_guest: "Sign in to unlock daily challenges.",
     daily_done: "Completed",
     daily_progress: "{value}/{target}",
     history_guest: "Sign in to view match history.",
     history_empty: "No matches yet.",
-    history_row: "{mode} • {score} • {result}{rating} • {time}",
+    history_row: "{mode} • {score} • {result}{rating}{bet} • {time}",
+    history_bet_delta: " • Stake {delta} TOK",
     history_result_win: "Win",
     history_result_loss: "Loss",
     history_result_left: "Left wins",
@@ -623,9 +658,11 @@ const translations = {
     toast_guest_mode: "GUEST MODE ENABLED",
     toast_signed_out: "SIGNED OUT",
     toast_rating_delta: "RATING {delta} • {rating}",
+    toast_bet_result: "BET {delta} TOK • BALANCE {balance}",
     toast_engine_loading: "Engine is still loading",
     toast_select_mode: "Choose a mode first",
     toast_ranked_login: "Ranked requires login",
+    toast_bet_login: "Bet Mode requires login",
     toast_setup_error: "Mode configuration error",
     toast_guest_no_save: "GUEST: PROGRESS IS NOT SAVED",
     toast_launch_error: "LAUNCH ERROR: REFRESH PAGE",
@@ -645,11 +682,13 @@ const translations = {
     auth_signin_done: "Signed in successfully.",
     auth_network_error: "Network error. Check internet and try again.",
     setup_lock_ranked: "Ranked locks settings for fair leaderboard conditions.",
+    setup_lock_bet: "Bet Mode locks match setup: Hard AI with token stake.",
     setup_lock_ai: "Target score, tempo, and AI difficulty can be changed.",
     setup_lock_pvp: "PvP: AI difficulty disabled, other settings are editable.",
     summary_target: "To {points}",
     summary_tempo: "Tempo x{value}",
     summary_ai: "AI: {level}",
+    summary_bet: "Stake: {stake} TOK",
     summary_mods_default: "Standard modifiers",
     summary_ranked: "Result will be submitted to leaderboard",
     winner_finished: "Match finished",
@@ -672,6 +711,9 @@ const translations = {
     match_target: "Target score",
     match_ai: "Neural AI difficulty",
     match_tempo: "Match tempo",
+    match_bet: "Stake",
+    bet_note: "Win the match for +{win} TOK. Loss: {lose} TOK.",
+    toast_bet_insufficient: "Not enough TOK for this stake",
     opt_auto_mode: "Auto (by mode)",
     tempo_calm: "Calm",
     tempo_standard: "Standard",
@@ -758,6 +800,10 @@ const translations = {
     mode_arcade_card_title: "街机+",
     mode_arcade_desc: "PvP 加速节奏，目标 11 分。",
     mode_arcade_card_desc: "PvP 到 11 分，节奏更快",
+    mode_bet_label: "Bet Mode",
+    mode_bet_card_title: "Bet Mode",
+    mode_bet_desc: "与 Hard AI 对战并押注代币。",
+    mode_bet_card_desc: "与 Hard AI 对战并押注代币",
     match_panel_title: "比赛状态",
     leaderboard_title: "排行榜",
     tab_week: "本周",
@@ -775,13 +821,15 @@ const translations = {
     profile_guest: "登录后可查看你的进度。",
     profile_rating_line: "评级: {rating} ELO（{division}）",
     profile_record_line: "对局: {games} • 胜: {wins} • 负: {losses}",
+    profile_balance_line: "余额: {balance} TOK",
     profile_streak_line: "连胜: {current} • 最佳: {best}",
     daily_guest: "登录后可解锁每日挑战。",
     daily_done: "已完成",
     daily_progress: "{value}/{target}",
     history_guest: "登录后可查看历史记录。",
     history_empty: "还没有对局记录。",
-    history_row: "{mode} • {score} • {result}{rating} • {time}",
+    history_row: "{mode} • {score} • {result}{rating}{bet} • {time}",
+    history_bet_delta: " • 押注 {delta} TOK",
     history_result_win: "胜利",
     history_result_loss: "失败",
     history_result_left: "左侧获胜",
@@ -849,9 +897,11 @@ const translations = {
     toast_guest_mode: "已进入游客模式",
     toast_signed_out: "已退出登录",
     toast_rating_delta: "评级 {delta} • {rating}",
+    toast_bet_result: "BET {delta} TOK • 余额 {balance}",
     toast_engine_loading: "引擎仍在加载",
     toast_select_mode: "请先选择模式",
     toast_ranked_login: "排位模式需要登录",
+    toast_bet_login: "Bet Mode 需要登录",
     toast_setup_error: "模式配置错误",
     toast_guest_no_save: "游客模式：进度不会保存",
     toast_launch_error: "启动错误：请刷新页面",
@@ -871,11 +921,13 @@ const translations = {
     auth_signin_done: "登录成功。",
     auth_network_error: "网络错误，请检查网络后重试。",
     setup_lock_ranked: "排位模式锁定参数，确保排行榜公平。",
+    setup_lock_bet: "Bet Mode 锁定参数：Hard AI + 固定押注。",
     setup_lock_ai: "可修改目标分、节奏和 AI 难度。",
     setup_lock_pvp: "PvP：AI 难度不可用，其余参数可修改。",
     summary_target: "到 {points} 分",
     summary_tempo: "节奏 x{value}",
     summary_ai: "AI: {level}",
+    summary_bet: "押注: {stake} TOK",
     summary_mods_default: "标准修饰项",
     summary_ranked: "结果将写入排行榜",
     winner_finished: "比赛结束",
@@ -898,6 +950,9 @@ const translations = {
     match_target: "目标分",
     match_ai: "神经网络难度",
     match_tempo: "比赛节奏",
+    match_bet: "押注",
+    bet_note: "获胜可得 +{win} TOK，失败: {lose} TOK。",
+    toast_bet_insufficient: "TOK 不足，无法押注",
     opt_auto_mode: "自动（按模式）",
     tempo_calm: "平稳",
     tempo_standard: "标准",
@@ -970,6 +1025,7 @@ const modeCatalog = {
     descKey: "mode_ai_desc",
     runtimeMode: 1,
     ranked: false,
+    requiresAuth: false,
     target: 7,
     aiLevel: 1,
     speedScale: 1.0,
@@ -980,6 +1036,7 @@ const modeCatalog = {
     descKey: "mode_ranked_desc",
     runtimeMode: 1,
     ranked: true,
+    requiresAuth: true,
     target: 7,
     aiLevel: 2,
     speedScale: 1.0,
@@ -991,6 +1048,7 @@ const modeCatalog = {
     descKey: "mode_pvp_desc",
     runtimeMode: 0,
     ranked: false,
+    requiresAuth: false,
     target: 7,
     aiLevel: 1,
     speedScale: 1.0,
@@ -1001,6 +1059,7 @@ const modeCatalog = {
     descKey: "mode_blitz_desc",
     runtimeMode: 1,
     ranked: false,
+    requiresAuth: false,
     target: 5,
     aiLevel: 2,
     speedScale: 1.18,
@@ -1011,6 +1070,7 @@ const modeCatalog = {
     descKey: "mode_training_desc",
     runtimeMode: 1,
     ranked: false,
+    requiresAuth: false,
     target: 15,
     aiLevel: 0,
     speedScale: 0.9,
@@ -1021,10 +1081,24 @@ const modeCatalog = {
     descKey: "mode_arcade_desc",
     runtimeMode: 0,
     ranked: false,
+    requiresAuth: false,
     target: 11,
     aiLevel: 1,
     speedScale: 1.1,
     mods: { fast: true, big: false, narrow: false },
+  },
+  bet: {
+    labelKey: "mode_bet_label",
+    descKey: "mode_bet_desc",
+    runtimeMode: 1,
+    ranked: false,
+    requiresAuth: true,
+    betMode: true,
+    target: 7,
+    aiLevel: 2,
+    speedScale: 1.0,
+    mods: { fast: false, big: false, narrow: false },
+    lockSetup: true,
   },
 };
 
@@ -1035,6 +1109,7 @@ const modeButtons = {
   blitz: btnModeBlitz,
   training: btnModeTraining,
   arcade: btnModeArcade,
+  bet: btnModeBet,
 };
 
 const dailyChallengeDefs = [
@@ -1110,6 +1185,8 @@ function localizeStaticUi() {
   setText(modeTrainingDescEl, t("mode_training_card_desc"));
   setText(modeArcadeTitleEl, t("mode_arcade_card_title"));
   setText(modeArcadeDescEl, t("mode_arcade_card_desc"));
+  setText(modeBetTitleEl, t("mode_bet_card_title"));
+  setText(modeBetDescEl, t("mode_bet_card_desc"));
   setText(extrasTitleMatchEl, t("extras_match"));
   setText(extrasTitleModsEl, t("extras_mods"));
   setText(extrasTitleThemeEl, t("extras_theme"));
@@ -1117,6 +1194,7 @@ function localizeStaticUi() {
   setText(labelMatchTargetEl, t("match_target"));
   setText(labelMatchAiLevelEl, t("match_ai"));
   setText(labelMatchTempoEl, t("match_tempo"));
+  setText(labelMatchBetEl, t("match_bet"));
   setText(modFastLabelEl, t("mod_fast"));
   setText(modBigLabelEl, t("mod_big"));
   setText(modNarrowLabelEl, t("mod_narrow"));
@@ -1142,6 +1220,11 @@ function localizeStaticUi() {
   setText(optTempo10El, t("tempo_standard"));
   setText(optTempo11El, t("tempo_fast"));
   setText(optTempo118El, t("tempo_turbo"));
+  setText(optBet25El, "25 TOK");
+  setText(optBet50El, "50 TOK");
+  setText(optBet100El, "100 TOK");
+  setText(optBet200El, "200 TOK");
+  updateBetNote();
   setText(hintRankedEl, t("hint_ranked"));
   setText(leaderboardTitleEl, t("leaderboard_title"));
   setText(tabWeek, t("tab_week"));
@@ -1334,12 +1417,39 @@ function parseSelectNumber(el) {
   return Number.isFinite(n) ? n : null;
 }
 
+function sanitizeBetStakeValue(raw) {
+  const value = String(raw || "100");
+  return validBetStakes.has(value) ? value : "100";
+}
+
+function getSelectedBetStake() {
+  if (!matchBetEl) return 100;
+  matchBetEl.value = sanitizeBetStakeValue(matchBetEl.value);
+  return Number(matchBetEl.value);
+}
+
+function updateBetNote() {
+  if (!betNoteEl) return;
+  const stake = getSelectedBetStake();
+  betNoteEl.textContent = t("bet_note", { win: stake, lose: stake });
+}
+
+function modeNeedsAuth(mode) {
+  const preset = modeCatalog[mode];
+  return !!preset?.requiresAuth;
+}
+
+function modeAuthToast(mode) {
+  return mode === "bet" ? t("toast_bet_login") : t("toast_ranked_login");
+}
+
 function applyModePresetToSetup(mode) {
   const preset = modeCatalog[mode];
   if (!preset) return;
   if (matchTargetEl) matchTargetEl.value = "auto";
   if (matchAiLevelEl) matchAiLevelEl.value = "auto";
   if (matchTempoEl) matchTempoEl.value = "auto";
+  if (matchBetEl) matchBetEl.value = sanitizeBetStakeValue(matchBetEl.value);
   if (modFastEl) modFastEl.checked = !!preset.mods.fast;
   if (modBigEl) modBigEl.checked = !!preset.mods.big;
   if (modNarrowEl) modNarrowEl.checked = !!preset.mods.narrow;
@@ -1347,9 +1457,15 @@ function applyModePresetToSetup(mode) {
 
 function updateSetupAvailability(mode = selectedMode) {
   const preset = modeCatalog[mode];
-  if (!preset) return;
+  if (!preset) {
+    if (betFieldEl) betFieldEl.classList.add("is-hidden");
+    if (betNoteEl) betNoteEl.textContent = "";
+    if (setupLockNoteEl) setupLockNoteEl.textContent = "";
+    return;
+  }
   const lockAll = !!preset.lockSetup;
   const aiRelevant = preset.runtimeMode === 1;
+  const betMode = !!preset.betMode;
 
   if (matchTargetEl) matchTargetEl.disabled = lockAll;
   if (matchTempoEl) matchTempoEl.disabled = lockAll;
@@ -1357,6 +1473,13 @@ function updateSetupAvailability(mode = selectedMode) {
   if (modFastEl) modFastEl.disabled = lockAll;
   if (modBigEl) modBigEl.disabled = lockAll;
   if (modNarrowEl) modNarrowEl.disabled = lockAll;
+  if (betFieldEl) betFieldEl.classList.toggle("is-hidden", !betMode);
+  if (matchBetEl) matchBetEl.disabled = !betMode;
+  if (betMode) {
+    updateBetNote();
+  } else if (betNoteEl) {
+    betNoteEl.textContent = "";
+  }
 
   if (lockAll) {
     if (matchTargetEl) matchTargetEl.value = String(preset.target);
@@ -1366,7 +1489,7 @@ function updateSetupAvailability(mode = selectedMode) {
     if (modBigEl) modBigEl.checked = !!preset.mods.big;
     if (modNarrowEl) modNarrowEl.checked = !!preset.mods.narrow;
     if (setupLockNoteEl) {
-      setupLockNoteEl.textContent = t("setup_lock_ranked");
+      setupLockNoteEl.textContent = betMode ? t("setup_lock_bet") : t("setup_lock_ranked");
     }
     return;
   }
@@ -1389,6 +1512,7 @@ function resolveModeSetup(mode = selectedMode) {
   let targetPoints = preset.target;
   let aiLevel = preset.aiLevel;
   let speedScale = preset.speedScale;
+  let betStake = preset.betMode ? getSelectedBetStake() : 0;
   let mods = { ...preset.mods };
 
   if (!preset.lockSetup) {
@@ -1404,6 +1528,9 @@ function resolveModeSetup(mode = selectedMode) {
     if (tempoOverride !== null) {
       speedScale = clampNumber(tempoOverride, 0.75, 1.35, preset.speedScale);
     }
+    if (preset.betMode) {
+      betStake = getSelectedBetStake();
+    }
     mods = getMods();
   }
 
@@ -1411,10 +1538,13 @@ function resolveModeSetup(mode = selectedMode) {
     id: mode,
     label: modeLabel(mode),
     ranked: preset.ranked,
+    betMode: !!preset.betMode,
+    requiresAuth: !!preset.requiresAuth,
     runtimeMode: preset.runtimeMode,
     targetPoints,
     aiLevel,
     speedScale,
+    betStake,
     mods,
   };
 }
@@ -1432,6 +1562,9 @@ function updateModeSummary(mode = selectedMode) {
   ];
   if (setup.runtimeMode === 1) {
     parts.push(t("summary_ai", { level: aiLevelLabel(setup.aiLevel) }));
+  }
+  if (setup.betMode) {
+    parts.push(t("summary_bet", { stake: setup.betStake }));
   }
   const modNames = [];
   if (setup.mods.fast) modNames.push(t("mod_fast"));
@@ -1734,14 +1867,17 @@ function hideOverlay() {
 
 function updateRankedAvailability() {
   btnModeRanked.disabled = !currentUser;
+  if (btnModeBet) btnModeBet.disabled = !currentUser;
   btnModeRanked.title = currentUser ? "" : t("toast_ranked_login");
-  if (!currentUser && selectedMode === "ranked") {
+  if (btnModeBet) btnModeBet.title = currentUser ? "" : t("toast_bet_login");
+  if (!currentUser && (selectedMode === "ranked" || selectedMode === "bet")) {
     selectedMode = null;
     for (const card of modeCardEls) {
       card.classList.remove("mode-active");
     }
-    document.body.classList.remove("mode-ai", "mode-ranked", "mode-pvp", "mode-blitz", "mode-training", "mode-arcade");
+    document.body.classList.remove("mode-ai", "mode-ranked", "mode-pvp", "mode-blitz", "mode-training", "mode-arcade", "mode-bet");
     btnStartGame.disabled = true;
+    updateSetupAvailability();
     updateModeSummary();
   }
 }
@@ -1749,8 +1885,8 @@ function updateRankedAvailability() {
 function selectMode(mode, options = {}) {
   if (!modeCatalog[mode]) return;
   const preserveSetup = !!options.preserveSetup;
-  if (mode === "ranked" && !currentUser) {
-    spawnToast(t("toast_ranked_login"), true);
+  if (modeNeedsAuth(mode) && !currentUser) {
+    spawnToast(modeAuthToast(mode), true);
     setStep("auth");
     return;
   }
@@ -1759,7 +1895,7 @@ function selectMode(mode, options = {}) {
     if (!button) continue;
     button.classList.toggle("mode-active", id === mode);
   }
-  document.body.classList.remove("mode-ai", "mode-ranked", "mode-pvp", "mode-blitz", "mode-training", "mode-arcade");
+  document.body.classList.remove("mode-ai", "mode-ranked", "mode-pvp", "mode-blitz", "mode-training", "mode-arcade", "mode-bet");
   document.body.classList.add(`mode-${mode}`);
   if (!preserveSetup) {
     applyModePresetToSetup(mode);
@@ -1789,6 +1925,14 @@ function isMissingTableError(error) {
   const code = String(error.code || "");
   const msg = String(error.message || "").toLowerCase();
   return code === "42P01" || msg.includes("does not exist") || msg.includes("could not find the table");
+}
+
+function isMissingColumnError(error, columnName) {
+  if (!error) return false;
+  const code = String(error.code || "");
+  const msg = String(error.message || "").toLowerCase();
+  const name = String(columnName || "").toLowerCase();
+  return code === "42703" || (name && msg.includes("column") && msg.includes(name));
 }
 
 function formatSignedNumber(n) {
@@ -1908,6 +2052,8 @@ function defaultProgress() {
     daily_matches: 0,
     daily_wins: 0,
     daily_best_combo: 0,
+    bet_balance: defaultBetBalance,
+    bet_peak: defaultBetBalance,
   };
 }
 
@@ -2041,7 +2187,7 @@ async function loadMatchHistory() {
   }
   const { data, error } = await supa
     .from("match_history")
-    .select("mode_id,left_points,right_points,result,rating_delta,created_at")
+    .select("*")
     .eq("user_id", currentUser.id)
     .order("created_at", { ascending: false })
     .limit(20);
@@ -2061,11 +2207,13 @@ async function loadMatchHistory() {
   for (const row of data) {
     const li = document.createElement("li");
     const ratingPart = row.rating_delta ? ` • ${formatSignedNumber(Number(row.rating_delta))} ELO` : "";
+    const betPart = row.bet_delta ? t("history_bet_delta", { delta: formatSignedNumber(Number(row.bet_delta)) }) : "";
     li.textContent = t("history_row", {
       mode: historyModeLabel(row.mode_id),
       score: `${row.left_points}-${row.right_points}`,
       result: historyResultLabel(row.result),
       rating: ratingPart,
+      bet: betPart,
       time: formatHistoryTime(row.created_at),
     });
     historyListEl.appendChild(li);
@@ -2075,6 +2223,7 @@ async function loadMatchHistory() {
 async function loadProgressPanels() {
   if (!profileSummaryEl || !streakLineEl || !badgeGridEl || !dailyListEl) return;
   if (!currentUser) {
+    currentBetBalance = defaultBetBalance;
     profileSummaryEl.textContent = t("profile_guest");
     streakLineEl.textContent = "";
     renderBadges([]);
@@ -2085,7 +2234,7 @@ async function loadProgressPanels() {
 
   const [{ data: rawProgress, error: progressError }, ratingStats] = await Promise.all([
     supa.from("player_progress")
-      .select("id,total_wins,total_losses,current_streak,best_streak,max_combo_ever,badges,daily_date,daily_matches,daily_wins,daily_best_combo")
+      .select("*")
       .eq("user_id", currentUser.id)
       .maybeSingle(),
     fetchRatingStats(),
@@ -2102,6 +2251,7 @@ async function loadProgressPanels() {
     progress.daily_wins = 0;
     progress.daily_best_combo = 0;
   }
+  currentBetBalance = Number(progress.bet_balance || defaultBetBalance);
 
   const ratingValue = ratingStats?.rating || ratingBase;
   const games = progress.total_wins + progress.total_losses;
@@ -2113,7 +2263,7 @@ async function loadProgressPanels() {
     games,
     wins: progress.total_wins,
     losses: progress.total_losses,
-  })}`;
+  })}\n${t("profile_balance_line", { balance: currentBetBalance })}`;
 
   streakLineEl.textContent = t("profile_streak_line", {
     current: progress.current_streak,
@@ -2125,39 +2275,46 @@ async function loadProgressPanels() {
   await loadMatchHistory();
 }
 
-async function recordMatchHistory(styleScore, ratingInfo = null) {
+async function recordMatchHistory(styleScore, matchData, ratingInfo = null, betDelta = 0) {
   if (!currentUser) return;
-  const modeId = selectedMode || (currentMode === 1 ? "ai" : "pvp");
+  const modeId = matchData?.modeId || (selectedMode || "ai");
   let result = "left";
-  if (currentMode === 1) {
-    result = lastWinner === 0 ? "win" : "loss";
+  if (matchData?.runtimeMode === 1) {
+    result = matchData.winner === 0 ? "win" : "loss";
   } else {
-    result = lastWinner === 0 ? "left" : "right";
+    result = matchData?.winner === 0 ? "left" : "right";
   }
 
   const payload = {
     user_id: currentUser.id,
     mode_id: modeId,
-    left_points: lastLeftPoints,
-    right_points: lastRightPoints,
+    left_points: matchData?.leftPoints ?? 0,
+    right_points: matchData?.rightPoints ?? 0,
     style_score: styleScore,
     result,
     rating_delta: ratingInfo?.delta || 0,
+    bet_delta: betDelta,
     rating_after: ratingInfo?.rating || null,
-    rally_peak: matchMaxCombo,
+    rally_peak: matchData?.maxCombo ?? 0,
   };
-  const { error } = await supa.from("match_history").insert(payload);
+  let { error } = await supa.from("match_history").insert(payload);
+  if (error && isMissingColumnError(error, "bet_delta")) {
+    const fallbackPayload = { ...payload };
+    delete fallbackPayload.bet_delta;
+    const retry = await supa.from("match_history").insert(fallbackPayload);
+    error = retry.error;
+  }
   if (error && !isMissingTableError(error)) {
     console.error("match_history insert failed", error);
   }
 }
 
-async function updatePlayerProgress(styleScore, ratingInfo = null) {
+async function updatePlayerProgress(styleScore, matchData, ratingInfo = null, betDelta = 0) {
   if (!currentUser) return;
   const today = todayIsoDate();
   const { data: existing, error } = await supa
     .from("player_progress")
-    .select("id,total_wins,total_losses,current_streak,best_streak,max_combo_ever,badges,daily_date,daily_matches,daily_wins,daily_best_combo")
+    .select("*")
     .eq("user_id", currentUser.id)
     .maybeSingle();
 
@@ -2177,11 +2334,13 @@ async function updatePlayerProgress(styleScore, ratingInfo = null) {
   let dailyMatches = progress.daily_date === today ? Number(progress.daily_matches || 0) : 0;
   let dailyWins = progress.daily_date === today ? Number(progress.daily_wins || 0) : 0;
   let dailyBestCombo = progress.daily_date === today ? Number(progress.daily_best_combo || 0) : 0;
+  let betBalance = Number(progress.bet_balance || defaultBetBalance);
+  let betPeak = Number(progress.bet_peak || betBalance || defaultBetBalance);
   let badges = normalizeBadges(progress.badges);
 
-  const aiMatch = currentMode === 1;
-  const didWin = aiMatch && lastWinner === 0;
-  const didLose = aiMatch && lastWinner === 1;
+  const aiMatch = matchData?.runtimeMode === 1;
+  const didWin = aiMatch && matchData?.winner === 0;
+  const didLose = aiMatch && matchData?.winner === 1;
 
   if (didWin) {
     totalWins += 1;
@@ -2194,8 +2353,13 @@ async function updatePlayerProgress(styleScore, ratingInfo = null) {
 
   dailyMatches += 1;
   if (didWin) dailyWins += 1;
-  dailyBestCombo = Math.max(dailyBestCombo, matchMaxCombo);
-  maxComboEver = Math.max(maxComboEver, matchMaxCombo);
+  dailyBestCombo = Math.max(dailyBestCombo, matchData?.maxCombo ?? 0);
+  maxComboEver = Math.max(maxComboEver, matchData?.maxCombo ?? 0);
+  if (matchData?.modeId === "bet" && betDelta !== 0) {
+    betBalance = Math.max(0, betBalance + betDelta);
+    betPeak = Math.max(betPeak, betBalance);
+  }
+  currentBetBalance = betBalance;
 
   const ratingValue = ratingInfo?.rating ?? (await fetchRatingStats())?.rating ?? ratingBase;
   const nextProgress = {
@@ -2210,6 +2374,8 @@ async function updatePlayerProgress(styleScore, ratingInfo = null) {
     daily_matches: dailyMatches,
     daily_wins: dailyWins,
     daily_best_combo: dailyBestCombo,
+    bet_balance: betBalance,
+    bet_peak: betPeak,
     updated_at: new Date().toISOString(),
   };
 
@@ -2230,6 +2396,18 @@ async function updatePlayerProgress(styleScore, ratingInfo = null) {
     const { error: e } = await supa.from("player_progress").insert(nextProgress);
     writeError = e;
   }
+  if (writeError && (isMissingColumnError(writeError, "bet_balance") || isMissingColumnError(writeError, "bet_peak"))) {
+    const fallbackProgress = { ...nextProgress };
+    delete fallbackProgress.bet_balance;
+    delete fallbackProgress.bet_peak;
+    if (existing?.id) {
+      const { error: e } = await supa.from("player_progress").update(fallbackProgress).eq("id", existing.id);
+      writeError = e;
+    } else {
+      const { error: e } = await supa.from("player_progress").insert(fallbackProgress);
+      writeError = e;
+    }
+  }
 
   if (writeError && !isMissingTableError(writeError)) {
     console.error("player_progress write failed", writeError);
@@ -2238,13 +2416,32 @@ async function updatePlayerProgress(styleScore, ratingInfo = null) {
 
 async function persistPostMatch(styleScore) {
   if (!currentUser) return;
+  const matchData = {
+    modeId: activeModeId || selectedMode || (currentMode === 1 ? "ai" : "pvp"),
+    runtimeMode: currentMode,
+    winner: lastWinner,
+    leftPoints: lastLeftPoints,
+    rightPoints: lastRightPoints,
+    maxCombo: matchMaxCombo,
+    betStake: activeBetStake,
+  };
+  const matchWasRanked = isRanked;
+  const betDelta = matchData.modeId === "bet"
+    ? (matchData.winner === 0 ? matchData.betStake : (matchData.winner === 1 ? -matchData.betStake : 0))
+    : 0;
   let ratingInfo = null;
-  if (currentMode === 1 && isRanked) {
+  if (matchData.runtimeMode === 1 && matchWasRanked) {
     await submitScore(styleScore);
     ratingInfo = await submitRankedRating(styleScore);
   }
-  await recordMatchHistory(styleScore, ratingInfo);
-  await updatePlayerProgress(styleScore, ratingInfo);
+  await recordMatchHistory(styleScore, matchData, ratingInfo, betDelta);
+  await updatePlayerProgress(styleScore, matchData, ratingInfo, betDelta);
+  if (betDelta !== 0) {
+    spawnToast(t("toast_bet_result", {
+      delta: formatSignedNumber(betDelta),
+      balance: currentBetBalance,
+    }), betDelta > 0);
+  }
   await loadProgressPanels();
 }
 
@@ -2346,6 +2543,7 @@ function saveSetupOptions() {
     target: matchTargetEl ? matchTargetEl.value : "auto",
     aiLevel: matchAiLevelEl ? matchAiLevelEl.value : "auto",
     tempo: matchTempoEl ? matchTempoEl.value : "auto",
+    bet: matchBetEl ? sanitizeBetStakeValue(matchBetEl.value) : "100",
   };
   window.localStorage.setItem("pong_setup_options", JSON.stringify(payload));
 }
@@ -2368,6 +2566,9 @@ function loadSetupOptions() {
     }
     if (matchTempoEl && typeof options.tempo === "string") {
       matchTempoEl.value = options.tempo;
+    }
+    if (matchBetEl && typeof options.bet === "string") {
+      matchBetEl.value = sanitizeBetStakeValue(options.bet);
     }
   } catch (_) {}
 }
@@ -2748,14 +2949,18 @@ async function startSelectedGame() {
     spawnToast(t("toast_select_mode"), true);
     return;
   }
-  if (selectedMode === "ranked" && !currentUser) {
-    spawnToast(t("toast_ranked_login"), true);
+  if (modeNeedsAuth(selectedMode) && !currentUser) {
+    spawnToast(modeAuthToast(selectedMode), true);
     setStep("auth");
     return;
   }
   const setup = resolveModeSetup(selectedMode);
   if (!setup) {
     spawnToast(t("toast_setup_error"), true);
+    return;
+  }
+  if (setup.betMode && currentBetBalance < setup.betStake) {
+    spawnToast(t("toast_bet_insufficient"), true);
     return;
   }
   try {
@@ -2772,6 +2977,8 @@ async function startSelectedGame() {
     isRanked = !!setup.ranked;
     currentAiLevel = setup.aiLevel;
     currentTargetPoints = setup.targetPoints;
+    activeModeId = setup.id;
+    activeBetStake = setup.betMode ? setup.betStake : 0;
 
     applySetupToRuntime(setup);
     ccall("set_game_mode", null, ["number"], [currentMode]);
@@ -2902,11 +3109,15 @@ function initEvents() {
   if (btnModeBlitz) btnModeBlitz.addEventListener("click", () => selectMode("blitz"));
   if (btnModeTraining) btnModeTraining.addEventListener("click", () => selectMode("training"));
   if (btnModeArcade) btnModeArcade.addEventListener("click", () => selectMode("arcade"));
+  if (btnModeBet) btnModeBet.addEventListener("click", () => selectMode("bet"));
 
-  const setupControls = [matchTargetEl, matchAiLevelEl, matchTempoEl, modFastEl, modBigEl, modNarrowEl];
+  const setupControls = [matchTargetEl, matchAiLevelEl, matchTempoEl, matchBetEl, modFastEl, modBigEl, modNarrowEl];
   for (const control of setupControls) {
     if (!control) continue;
     control.addEventListener("change", () => {
+      if (control === matchBetEl) {
+        updateBetNote();
+      }
       updateModeSummary();
       saveSetupOptions();
     });

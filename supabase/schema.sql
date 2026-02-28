@@ -76,6 +76,7 @@ create table if not exists public.match_history (
   style_score integer not null default 0,
   result text not null,
   rating_delta integer not null default 0,
+  bet_delta integer not null default 0,
   rating_after integer,
   rally_peak integer not null default 0,
   created_at timestamp with time zone default now()
@@ -105,6 +106,8 @@ create table if not exists public.player_progress (
   daily_matches integer not null default 0,
   daily_wins integer not null default 0,
   daily_best_combo integer not null default 0,
+  bet_balance integer not null default 500,
+  bet_peak integer not null default 500,
   updated_at timestamp with time zone default now()
 );
 

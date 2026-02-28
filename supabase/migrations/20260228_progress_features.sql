@@ -7,10 +7,14 @@ create table if not exists public.match_history (
   style_score integer not null default 0,
   result text not null,
   rating_delta integer not null default 0,
+  bet_delta integer not null default 0,
   rating_after integer,
   rally_peak integer not null default 0,
   created_at timestamp with time zone default now()
 );
+
+alter table public.match_history
+  add column if not exists bet_delta integer not null default 0;
 
 create index if not exists match_history_user_created_idx
   on public.match_history(user_id, created_at desc);
@@ -40,8 +44,16 @@ create table if not exists public.player_progress (
   daily_matches integer not null default 0,
   daily_wins integer not null default 0,
   daily_best_combo integer not null default 0,
+  bet_balance integer not null default 500,
+  bet_peak integer not null default 500,
   updated_at timestamp with time zone default now()
 );
+
+alter table public.player_progress
+  add column if not exists bet_balance integer not null default 500;
+
+alter table public.player_progress
+  add column if not exists bet_peak integer not null default 500;
 
 create unique index if not exists player_progress_user_unique
   on public.player_progress(user_id);
