@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Вход по ссылке</title>
+  </head>
+  <body style="margin:0;padding:0;background:#070b10;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#070b10;padding:28px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:620px;background:#0f151c;border:1px solid #1f2a34;border-radius:16px;overflow:hidden;">
+            <tr>
+              <td style="padding:30px 28px 12px 28px;background:linear-gradient(135deg,#0f151c 0%,#0f151c 65%,#0a2230 100%);">
+                <div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:1.7px;text-transform:uppercase;color:#20b8ff;margin-bottom:10px;">
+                  Pong Neural Arena
+                </div>
+                <h1 style="font-family:Arial,Helvetica,sans-serif;margin:0;color:#e8fff8;font-size:26px;line-height:1.25;">
+                  Быстрый вход по защищенной ссылке
+                </h1>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:18px 28px 30px 28px;">
+                <p style="margin:0 0 12px 0;font-family:Arial,Helvetica,sans-serif;color:#a9c4bb;font-size:15px;line-height:1.6;">
+                  Запрошен вход для
+                  <span style="color:#d7fdf2;font-weight:700;">{{ .Email }}</span>.
+                </p>
+                <p style="margin:0 0 22px 0;font-family:Arial,Helvetica,sans-serif;color:#a9c4bb;font-size:15px;line-height:1.6;">
+                  Нажмите кнопку, чтобы открыть игру без ввода пароля.
+                </p>
+
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 18px 0;">
+                  <tr>
+                    <td align="center" style="border-radius:12px;background:linear-gradient(90deg,#3dffb6,#20b8ff);">
+                      <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 22px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:700;color:#04120d;text-decoration:none;border-radius:12px;">
+                        Войти в Pong
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="margin:0 0 12px 0;font-family:Arial,Helvetica,sans-serif;color:#7aa398;font-size:13px;line-height:1.6;">
+                  Если кнопка не работает, скопируйте ссылку:
+                </p>
+                <p style="margin:0 0 20px 0;font-family:Arial,Helvetica,sans-serif;color:#9fd7c6;font-size:12px;line-height:1.6;word-break:break-all;">
+                  {{ .ConfirmationURL }}
+                </p>
+
+                <p style="margin:0;font-family:Arial,Helvetica,sans-serif;color:#6f8a81;font-size:12px;line-height:1.7;">
+                  Если это были не вы, просто игнорируйте письмо.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
